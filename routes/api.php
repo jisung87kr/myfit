@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CalculationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
@@ -59,6 +60,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Survey Submission
         Route::post('/{survey}/submit', [SurveyController::class, 'submit']);
         Route::get('/{survey}/submission', [SurveyController::class, 'getSubmission']);
+    });
+
+    // Calorie Calculations
+    Route::prefix('calculations')->group(function () {
+        Route::post('/bmr', [CalculationController::class, 'calculateBMR']);
+        Route::post('/tdee', [CalculationController::class, 'calculateTDEE']);
+        Route::post('/target-calories', [CalculationController::class, 'calculateTargetCalories']);
+        Route::post('/calculate', [CalculationController::class, 'calculate']);
+        Route::get('/latest', [CalculationController::class, 'getLatest']);
     });
 });
 
