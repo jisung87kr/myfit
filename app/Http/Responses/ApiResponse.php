@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use App\Enums\HttpStatus;
 use Illuminate\Http\JsonResponse;
 
 class ApiResponse
@@ -11,11 +12,14 @@ class ApiResponse
      *
      * @param mixed $data
      * @param string $message
-     * @param int $code
+     * @param HttpStatus|int $status
      * @return JsonResponse
      */
-    public static function success(mixed $data = null, string $message = '', int $code = 200): JsonResponse
-    {
+    public static function success(
+        mixed $data = null,
+        string $message = '',
+        HttpStatus|int $status = HttpStatus::OK
+    ): JsonResponse {
         $response = [
             'success' => true,
         ];
@@ -28,7 +32,9 @@ class ApiResponse
             $response['data'] = $data;
         }
 
-        return response()->json($response, $code);
+        $statusCode = $status instanceof HttpStatus ? $status->value : $status;
+
+        return response()->json($response, $statusCode);
     }
 
     /**
@@ -36,11 +42,14 @@ class ApiResponse
      *
      * @param string $message
      * @param mixed $errors
-     * @param int $code
+     * @param HttpStatus|int $status
      * @return JsonResponse
      */
-    public static function error(string $message = '오류가 발생했습니다.', mixed $errors = null, int $code = 400): JsonResponse
-    {
+    public static function error(
+        string $message = '오류가 발생했습니다.',
+        mixed $errors = null,
+        HttpStatus|int $status = HttpStatus::BAD_REQUEST
+    ): JsonResponse {
         $response = [
             'success' => false,
             'message' => $message,
@@ -50,7 +59,9 @@ class ApiResponse
             $response['errors'] = $errors;
         }
 
-        return response()->json($response, $code);
+        $statusCode = $status instanceof HttpStatus ? $status->value : $status;
+
+        return response()->json($response, $statusCode);
     }
 
     /**
@@ -62,7 +73,7 @@ class ApiResponse
      */
     public static function created(mixed $data = null, string $message = '생성되었습니다.'): JsonResponse
     {
-        return self::success($data, $message, 201);
+        return self::success($data, $message, HttpStatus::CREATED);
     }
 
     /**
@@ -72,7 +83,7 @@ class ApiResponse
      */
     public static function noContent(): JsonResponse
     {
-        return response()->json(null, 204);
+        return response()->json(null, HttpStatus::NO_CONTENT->value);
     }
 
     /**
@@ -84,7 +95,7 @@ class ApiResponse
      */
     public static function validationError(mixed $errors, string $message = '입력값을 확인해주세요.'): JsonResponse
     {
-        return self::error($message, $errors, 422);
+        return self::error($message, $errors, HttpStatus::UNPROCESSABLE_ENTITY);
     }
 
     /**
@@ -95,7 +106,7 @@ class ApiResponse
      */
     public static function unauthorized(string $message = '인증이 필요합니다.'): JsonResponse
     {
-        return self::error($message, null, 401);
+        return self::error($message, null, HttpStatus::UNAUTHORIZED);
     }
 
     /**
@@ -106,7 +117,7 @@ class ApiResponse
      */
     public static function forbidden(string $message = '권한이 없습니다.'): JsonResponse
     {
-        return self::error($message, null, 403);
+        return self::error($message, null, HttpStatus::FORBIDDEN);
     }
 
     /**
@@ -117,6 +128,6 @@ class ApiResponse
      */
     public static function notFound(string $message = '요청한 리소스를 찾을 수 없습니다.'): JsonResponse
     {
-        return self::error($message, null, 404);
+        return self::error($message, null, HttpStatus::NOT_FOUND);
     }
 }

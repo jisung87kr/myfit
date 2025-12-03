@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TokenType;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
@@ -22,7 +23,7 @@ class AuthService
             'password' => Hash::make($data['password']),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken(TokenType::AUTH->value)->plainTextToken;
 
         return [
             'user' => [
@@ -54,7 +55,7 @@ class AuthService
         // Revoke all existing tokens
         $user->tokens()->delete();
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken(TokenType::AUTH->value)->plainTextToken;
 
         return [
             'user' => [

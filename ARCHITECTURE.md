@@ -607,6 +607,347 @@ public function login(LoginRequest $request)
 
 ---
 
+## Enum 활용
+
+Enum을 사용하여 상수값을 타입 안전하게 관리합니다.
+
+### HttpStatus Enum
+
+HTTP 상태 코드를 Enum으로 관리:
+
+```php
+use App\Enums\HttpStatus;
+
+// ApiResponse에서 사용
+return ApiResponse::success($data, $message, HttpStatus::CREATED);
+return ApiResponse::error($message, $errors, HttpStatus::NOT_FOUND);
+
+// Enum 메서드 활용
+$status = HttpStatus::OK;
+$status->isSuccess(); // true
+$status->description(); // "요청이 성공적으로 처리되었습니다."
+```
+
+### SocialProvider Enum
+
+소셜 로그인 제공자 관리:
+
+```php
+use App\Enums\SocialProvider;
+
+// Model cast로 사용
+class SocialAccount extends Model
+{
+    protected function casts(): array
+    {
+        return [
+            'provider' => SocialProvider::class,
+        ];
+    }
+}
+
+// 사용 예시
+$account->provider = SocialProvider::GOOGLE;
+$account->provider->displayName(); // "Google"
+$account->provider->isEnabled(); // true/false
+```
+
+### TokenType Enum
+
+토큰 타입 및 만료 시간 관리:
+
+```php
+use App\Enums\TokenType;
+
+// 토큰 생성 시
+$token = $user->createToken(TokenType::AUTH->value)->plainTextToken;
+
+// 토큰 정보 조회
+TokenType::AUTH->expiresIn(); // 1440 (minutes)
+TokenType::PASSWORD_RESET->description(); // "비밀번호 재설정 토큰"
+```
+
+### CacheKey Enum
+
+캐시 키 관리:
+
+```php
+use App\Enums\CacheKey;
+
+// 캐시 저장
+Cache::put(
+    CacheKey::USER_PROFILE->key($userId),
+    $userData,
+    CacheKey::USER_PROFILE->ttl()
+);
+
+// 캐시 조회
+$cached = Cache::get(CacheKey::USER_PROFILE->key($userId));
+```
+
+### Enum 생성 가이드
+
+새로운 Enum이 필요한 경우:
+
+1. **위치**: `app/Enums/`
+2. **명명**: `{Domain}Type`, `{Domain}Status` 등
+3. **타입**: `string` 또는 `int` backed enum 사용
+4. **메서드**: 비즈니스 로직 관련 헬퍼 메서드 추가
+
+```php
+enum OrderStatus: string
+{
+    case PENDING = 'pending';
+    case CONFIRMED = 'confirmed';
+    case SHIPPED = 'shipped';
+    case DELIVERED = 'delivered';
+    case CANCELLED = 'cancelled';
+
+    public function canCancel(): bool
+    {
+        return in_array($this, [self::PENDING, self::CONFIRMED]);
+    }
+
+    public function label(): string
+    {
+        return match($this) {
+            self::PENDING => '주문 대기',
+            self::CONFIRMED => '주문 확인',
+            self::SHIPPED => '배송 중',
+            self::DELIVERED => '배송 완료',
+            self::CANCELLED => '주문 취소',
+        };
+    }
+}
+```
+
+---
+
+## 디자인 패턴
+
+### 1. Repository Pattern (선택사항)
+
+복잡한 쿼리를 캡슐화하고 데이터 접근 로직을 분리합니다.
+
+**언제 사용?**
+- 복잡한 쿼리가 여러 곳에서 재사용될 때
+- 데이터 소스 변경 가능성이 있을 때
+- 테스트 용이성을 높이고 싶을 때
+
+**구현 예시**:
+
+```php
+// app/Repositories/UserRepository.php
+namespace App\Repositories;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+
+class UserRepository
+{
+    public function findByEmail(string $email): ?User
+    {
+        return User::where('email', $email)->first();
+    }
+
+    public function findActiveUsers(): Collection
+    {
+        return User::where('is_active', true)
+            ->whereNotNull('email_verified_at')
+            ->get();
+    }
+
+    public function findUsersWithExpiredPlans(): Collection
+    {
+        return User::whereHas('dietPlan', function ($query) {
+            $query->where('expires_at', '<', now());
+        })->get();
+    }
+}
+
+// Service에서 사용
+class UserService
+{
+    public function __construct(
+        private UserRepository $userRepository
+    ) {}
+
+    public function notifyUsersWithExpiredPlans(): void
+    {
+        $users = $this->userRepository->findUsersWithExpiredPlans();
+
+        foreach ($users as $user) {
+            // 알림 로직
+        }
+    }
+}
+```
+
+### 2. Strategy Pattern
+
+알고리즘을 캡슐화하여 런타임에 교체 가능하게 합니다.
+
+**사용 예시: 소셜 로그인**
+
+```php
+// app/Services/Auth/SocialAuthStrategy.php
+interface SocialAuthStrategy
+{
+    public function authenticate(string $token): User;
+}
+
+// Google 전략
+class GoogleAuthStrategy implements SocialAuthStrategy
+{
+    public function authenticate(string $token): User
+    {
+        // Google OAuth 처리
+        $googleUser = Socialite::driver('google')->userFromToken($token);
+
+        return $this->findOrCreateUser($googleUser);
+    }
+}
+
+// Kakao 전략
+class KakaoAuthStrategy implements SocialAuthStrategy
+{
+    public function authenticate(string $token): User
+    {
+        // Kakao OAuth 처리
+        $kakaoUser = Socialite::driver('kakao')->userFromToken($token);
+
+        return $this->findOrCreateUser($kakaoUser);
+    }
+}
+
+// Context
+class SocialAuthService
+{
+    public function authenticate(SocialProvider $provider, string $token): User
+    {
+        $strategy = match($provider) {
+            SocialProvider::GOOGLE => new GoogleAuthStrategy(),
+            SocialProvider::KAKAO => new KakaoAuthStrategy(),
+            SocialProvider::NAVER => new NaverAuthStrategy(),
+        };
+
+        return $strategy->authenticate($token);
+    }
+}
+```
+
+### 3. Factory Pattern
+
+객체 생성 로직을 캡슐화합니다.
+
+**사용 예시: 알림 생성**
+
+```php
+// app/Factories/NotificationFactory.php
+enum NotificationType: string
+{
+    case EMAIL = 'email';
+    case SMS = 'sms';
+    case PUSH = 'push';
+}
+
+class NotificationFactory
+{
+    public static function create(NotificationType $type): NotificationChannel
+    {
+        return match($type) {
+            NotificationType::EMAIL => new EmailNotification(),
+            NotificationType::SMS => new SmsNotification(),
+            NotificationType::PUSH => new PushNotification(),
+        };
+    }
+}
+
+// 사용
+$notification = NotificationFactory::create(NotificationType::EMAIL);
+$notification->send($user, $message);
+```
+
+### 4. Observer Pattern (Laravel Events)
+
+이벤트 기반 아키텍처를 통해 느슨한 결합을 유지합니다.
+
+```php
+// app/Events/UserRegistered.php
+class UserRegistered
+{
+    public function __construct(public User $user) {}
+}
+
+// app/Listeners/SendWelcomeEmail.php
+class SendWelcomeEmail
+{
+    public function handle(UserRegistered $event): void
+    {
+        Mail::to($event->user->email)->send(new WelcomeEmail($event->user));
+    }
+}
+
+// Service에서 이벤트 발생
+public function register(array $data): User
+{
+    $user = User::create($data);
+
+    event(new UserRegistered($user));
+
+    return $user;
+}
+```
+
+### 5. Decorator Pattern
+
+객체에 동적으로 기능을 추가합니다.
+
+**사용 예시: 캐시 데코레이터**
+
+```php
+interface DietPlanService
+{
+    public function getPlan(int $userId): DietPlan;
+}
+
+class BaseDietPlanService implements DietPlanService
+{
+    public function getPlan(int $userId): DietPlan
+    {
+        return DietPlan::where('user_id', $userId)->latest()->first();
+    }
+}
+
+class CachedDietPlanService implements DietPlanService
+{
+    public function __construct(
+        private DietPlanService $service
+    ) {}
+
+    public function getPlan(int $userId): DietPlan
+    {
+        return Cache::remember(
+            CacheKey::USER_DIET_PLAN->key($userId),
+            CacheKey::USER_DIET_PLAN->ttl(),
+            fn() => $this->service->getPlan($userId)
+        );
+    }
+}
+```
+
+### 패턴 선택 가이드
+
+| 상황 | 추천 패턴 |
+|------|----------|
+| 복잡한 쿼리 재사용 | Repository |
+| 알고리즘이 여러 개 필요 | Strategy |
+| 객체 생성이 복잡함 | Factory |
+| 이벤트 기반 처리 | Observer (Laravel Events) |
+| 기능 추가/확장 | Decorator |
+
+---
+
 ## 체크리스트
 
 새로운 기능 구현 시 다음을 확인하세요:
