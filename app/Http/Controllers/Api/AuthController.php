@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\AuthService;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private AuthService $authService
+    ) {}
+
     /**
      * Register a new user
      */
@@ -30,26 +33,12 @@ class AuthController extends Controller
             'password.regex' => '비밀번호는 영문과 숫자를 포함해야 합니다.',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $result = $this->authService->register($validated);
 
         return response()->json([
             'success' => true,
             'message' => '회원가입이 완료되었습니다.',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'created_at' => $user->created_at,
-                ],
-                'token' => $token,
-            ],
+            'data' => $result,
         ], 201);
     }
 
@@ -63,33 +52,22 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        try {
+            $result = $this->authService->login(
+                $request->email,
+                $request->password
+            );
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => true,
+                'message' => '로그인 성공',
+                'data' => $result,
+            ]);
+        } catch (AuthenticationException $e) {
             throw ValidationException::withMessages([
-                'email' => ['이메일 또는 비밀번호가 올바르지 않습니다.'],
+                'email' => [$e->getMessage()],
             ]);
         }
-
-        // Revoke old tokens
-        $user->tokens()->delete();
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => '로그인 성공',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'profile_photo_path' => $user->profile_photo_path,
-                ],
-                'token' => $token,
-            ],
-        ]);
     }
 
     /**
@@ -97,7 +75,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $this->authService->logout($request->user());
 
         return response()->json([
             'success' => true,
@@ -110,19 +88,11 @@ class AuthController extends Controller
      */
     public function user(Request $request)
     {
-        $user = $request->user();
+        $userInfo = $this->authService->getUserInfo($request->user());
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'profile_photo_path' => $user->profile_photo_path,
-                'email_verified_at' => $user->email_verified_at,
-                'created_at' => $user->created_at,
-            ],
+            'data' => $userInfo,
         ]);
     }
 }

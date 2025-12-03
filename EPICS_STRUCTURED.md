@@ -8,6 +8,258 @@
 
 ---
 
+## 개발 아키텍처 가이드라인
+
+### 📐 레이어 아키텍처 (Layered Architecture)
+
+모든 개발은 다음 레이어 구조를 따릅니다:
+
+```
+┌─────────────────────────────────────┐
+│        Controller Layer             │  HTTP 요청/응답 처리
+│  (Request Validation & Response)    │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│         Service Layer               │  비즈니스 로직
+│   (Business Logic & Orchestration)  │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│      Repository Layer (Optional)    │  데이터 접근 로직
+│        (Data Access Logic)          │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│          Model Layer                │  데이터 구조 & 관계
+│    (Database & Relationships)       │
+└─────────────────────────────────────┘
+```
+
+### 📋 각 레이어의 책임
+
+#### 1. **Controller Layer** (컨트롤러)
+**책임**:
+- HTTP 요청 수신
+- Request Validation (Form Request 사용)
+- Service 호출
+- HTTP 응답 반환 (JSON)
+- 예외 처리
+
+**금지사항**:
+- ❌ 비즈니스 로직 작성
+- ❌ 직접 데이터베이스 접근
+- ❌ 복잡한 데이터 가공
+
+**예시**:
+```php
+// ✅ Good
+public function register(RegisterRequest $request)
+{
+    $user = $this->authService->register($request->validated());
+
+    return response()->json([
+        'success' => true,
+        'data' => $user,
+    ], 201);
+}
+
+// ❌ Bad - 비즈니스 로직이 컨트롤러에 있음
+public function register(Request $request)
+{
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+    ]);
+    $token = $user->createToken('auth')->plainTextToken;
+    return response()->json(['token' => $token]);
+}
+```
+
+#### 2. **Service Layer** (서비스)
+**책임**:
+- 비즈니스 로직 구현
+- 트랜잭션 관리
+- 여러 모델/리포지토리 조합
+- 외부 API 호출
+- 이벤트 발생
+
+**위치**: `app/Services/`
+
+**명명 규칙**: `{Domain}Service.php`
+- AuthService
+- DietPlanService
+- SurveyService
+
+**예시**:
+```php
+class AuthService
+{
+    public function register(array $data): array
+    {
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return [
+            'user' => $user,
+            'token' => $token,
+        ];
+    }
+
+    public function login(string $email, string $password): array
+    {
+        $user = User::where('email', $email)->first();
+
+        if (!$user || !Hash::check($password, $user->password)) {
+            throw new AuthenticationException('인증 실패');
+        }
+
+        $user->tokens()->delete(); // 기존 토큰 삭제
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return [
+            'user' => $user,
+            'token' => $token,
+        ];
+    }
+}
+```
+
+#### 3. **Repository Layer** (리포지토리 - 선택사항)
+**사용 시기**:
+- 복잡한 쿼리가 많은 경우
+- 데이터 소스가 변경될 가능성이 있는 경우
+- 테스트 용이성이 중요한 경우
+
+**책임**:
+- 데이터베이스 쿼리
+- 데이터 CRUD
+- 복잡한 조회 로직
+
+**위치**: `app/Repositories/`
+
+**예시**:
+```php
+class UserRepository
+{
+    public function findByEmail(string $email): ?User
+    {
+        return User::where('email', $email)->first();
+    }
+
+    public function create(array $data): User
+    {
+        return User::create($data);
+    }
+}
+```
+
+#### 4. **Model Layer** (모델)
+**책임**:
+- 데이터베이스 테이블 매핑
+- 관계(Relationships) 정의
+- Accessor & Mutator
+- 모델 이벤트
+
+**금지사항**:
+- ❌ 비즈니스 로직
+- ❌ HTTP 관련 코드
+- ❌ 외부 API 호출
+
+### 🔧 Request Validation
+
+컨트롤러에서 직접 validation하지 말고 **Form Request** 사용:
+
+```bash
+php artisan make:request RegisterRequest
+```
+
+```php
+class RegisterRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:8|confirmed',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique' => '이미 사용 중인 이메일입니다.',
+        ];
+    }
+}
+```
+
+### 📦 의존성 주입 (Dependency Injection)
+
+Service는 생성자 주입 사용:
+
+```php
+class AuthController extends Controller
+{
+    public function __construct(
+        private AuthService $authService
+    ) {}
+
+    public function register(RegisterRequest $request)
+    {
+        $result = $this->authService->register($request->validated());
+        return response()->json($result, 201);
+    }
+}
+```
+
+### 🗂️ 디렉토리 구조
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   └── Api/
+│   │       ├── AuthController.php
+│   │       ├── SurveyController.php
+│   │       └── DietPlanController.php
+│   └── Requests/
+│       ├── Auth/
+│       │   ├── RegisterRequest.php
+│       │   └── LoginRequest.php
+│       └── Survey/
+│           └── SubmitSurveyRequest.php
+├── Services/
+│   ├── AuthService.php
+│   ├── SurveyService.php
+│   └── DietPlanService.php
+├── Repositories/ (선택)
+│   ├── UserRepository.php
+│   └── SurveyRepository.php
+└── Models/
+    ├── User.php
+    ├── Survey.php
+    └── DietPlan.php
+```
+
+### ✅ 체크리스트
+
+모든 기능 구현 시 확인:
+- [ ] Controller는 HTTP 처리만 담당하는가?
+- [ ] 비즈니스 로직은 Service에 있는가?
+- [ ] Validation은 Form Request로 분리했는가?
+- [ ] Service에 의존성 주입을 사용했는가?
+- [ ] 테스트 작성 완료했는가?
+
+---
+
 # Phase 1: MVP (Minimum Viable Product)
 
 > **목표**: 사용자가 설문을 완료하고 AI 플랜을 받아 기본적인 기록을 할 수 있는 시스템
