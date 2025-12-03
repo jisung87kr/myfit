@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\SurveyStep;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
+use App\Models\SurveySubmission;
 use App\Models\User;
 use App\Models\UserSurveyResponse;
 use Illuminate\Support\Facades\DB;
@@ -308,5 +309,106 @@ class SurveyService
                 $q->where('step', $step->value);
             })
             ->delete();
+    }
+
+    /**
+     * 설문 제출 (최종 완료)
+     *
+     * @throws ValidationException
+     */
+    public function submitSurvey(User $user, Survey $survey): array
+    {
+        DB::beginTransaction();
+
+        try {
+            // 1. 이미 제출했는지 확인
+            $existingSubmission = SurveySubmission::where('user_id', $user->id)
+                ->where('survey_id', $survey->id)
+                ->first();
+
+            if ($existingSubmission) {
+                throw ValidationException::withMessages([
+                    'survey' => '이미 제출한 설문입니다.',
+                ]);
+            }
+
+            // 2. 모든 필수 질문에 답변했는지 확인
+            $requiredQuestions = $survey->questions()
+                ->where('is_required', true)
+                ->pluck('id');
+
+            $answeredRequiredQuestions = UserSurveyResponse::where('user_id', $user->id)
+                ->where('survey_id', $survey->id)
+                ->whereIn('survey_question_id', $requiredQuestions)
+                ->pluck('survey_question_id');
+
+            $unansweredQuestions = $requiredQuestions->diff($answeredRequiredQuestions);
+
+            if ($unansweredQuestions->isNotEmpty()) {
+                throw ValidationException::withMessages([
+                    'survey' => '모든 필수 질문에 답변해주세요.',
+                    'unanswered_questions' => $unansweredQuestions->toArray(),
+                ]);
+            }
+
+            // 3. 모든 응답 데이터 수집
+            $responses = $this->getUserResponses($user, $survey);
+
+            // 4. 제출 기록 생성
+            $submission = SurveySubmission::create([
+                'user_id' => $user->id,
+                'survey_id' => $survey->id,
+                'completion_data' => [
+                    'responses' => $responses,
+                    'total_questions' => $survey->questions()->count(),
+                    'answered_questions' => count($responses),
+                    'submitted_by' => $user->name,
+                    'submitted_email' => $user->email,
+                ],
+                'submitted_at' => now(),
+            ]);
+
+            DB::commit();
+
+            return [
+                'submission_id' => $submission->id,
+                'submitted_at' => $submission->submitted_at->toISOString(),
+                'total_responses' => count($responses),
+                'message' => '설문이 성공적으로 제출되었습니다.',
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * 제출 여부 확인
+     */
+    public function hasSubmitted(User $user, Survey $survey): bool
+    {
+        return SurveySubmission::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->exists();
+    }
+
+    /**
+     * 제출 정보 조회
+     */
+    public function getSubmission(User $user, Survey $survey): ?array
+    {
+        $submission = SurveySubmission::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->first();
+
+        if (!$submission) {
+            return null;
+        }
+
+        return [
+            'id' => $submission->id,
+            'submitted_at' => $submission->submitted_at->toISOString(),
+            'completion_data' => $submission->completion_data,
+        ];
     }
 }

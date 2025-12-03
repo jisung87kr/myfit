@@ -429,6 +429,73 @@ Response:
 }
 ```
 
+### 10. 설문 최종 제출
+
+```bash
+POST /api/surveys/1/submit
+Authorization: Bearer {token}
+
+Response (성공):
+{
+  "success": true,
+  "message": "설문이 성공적으로 제출되었습니다.",
+  "data": {
+    "submission_id": 1,
+    "submitted_at": "2025-12-03T15:30:00.000000Z",
+    "total_responses": 31,
+    "message": "설문이 성공적으로 제출되었습니다."
+  }
+}
+
+Response (실패 - 미완성):
+{
+  "success": false,
+  "message": "모든 필수 질문에 답변해주세요.",
+  "errors": {
+    "survey": ["모든 필수 질문에 답변해주세요."],
+    "unanswered_questions": [5, 12, 18]
+  }
+}
+
+Response (실패 - 이미 제출):
+{
+  "success": false,
+  "message": "이미 제출한 설문입니다.",
+  "errors": {
+    "survey": ["이미 제출한 설문입니다."]
+  }
+}
+```
+
+### 11. 제출 정보 조회
+
+```bash
+GET /api/surveys/1/submission
+Authorization: Bearer {token}
+
+Response (제출 완료):
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "submitted_at": "2025-12-03T15:30:00.000000Z",
+    "completion_data": {
+      "responses": [...],
+      "total_questions": 31,
+      "answered_questions": 31,
+      "submitted_by": "홍길동",
+      "submitted_email": "user@example.com"
+    }
+  }
+}
+
+Response (미제출):
+{
+  "success": false,
+  "message": "제출 기록이 없습니다."
+}
+```
+
 ## 설문 데이터 시딩
 
 ### 개발 환경 설정
@@ -508,13 +575,33 @@ php artisan db:seed --class=SurveySeeder --force
   - `completed`: 모든 질문 답변 완료
 - 전체 질문 수, 답변한 질문 수, 진행률 포함
 
+### 설문 최종 제출 ✅ 구현 완료
+
+모든 필수 질문에 답변한 후 설문을 최종 제출할 수 있습니다.
+
+- 엔드포인트: `POST /api/surveys/{survey}/submit`
+- 모든 필수 질문 답변 완료 확인
+- 중복 제출 방지
+- 제출 시점의 모든 응답 데이터 스냅샷 저장
+- 제출 후 제출 ID 및 제출 시각 반환
+
+**제출 정보 조회:**
+- 엔드포인트: `GET /api/surveys/{survey}/submission`
+- 제출 여부 및 제출 시각 확인
+- 제출 당시의 완전한 응답 데이터 조회
+
+**검증 규칙:**
+- 모든 필수 질문(`is_required: true`)에 답변 필수
+- 선택 질문은 미답변 가능
+- 설문당 사용자당 1회만 제출 가능
+- 제출 후 수정 불가 (재제출하려면 reset 필요)
+
 ## 향후 개발 계획
 
 1. **Step 5 질문 추가** (Epic 1.2.5 - Additional Info)
-2. **설문 결과 최종 제출** (Epic 1.2.7)
-3. **답변 기반 AI 플랜 생성** (Epic 1.3)
-4. **설문 결과 시각화** 대시보드
-5. **다국어 지원** (영어, 일본어 등)
+2. **답변 기반 AI 플랜 생성** (Epic 1.3)
+3. **설문 결과 시각화** 대시보드
+4. **다국어 지원** (영어, 일본어 등)
 
 ## 테스트
 
@@ -539,6 +626,9 @@ php artisan test --filter=HealthPreferenceSurveyTest
 # 설문 관리 기능 테스트
 php artisan test --filter=SurveyManagementTest
 
+# 설문 제출 기능 테스트
+php artisan test --filter=SurveySubmissionTest
+
 # 특정 테스트 케이스
 php artisan test --filter=test_can_submit_complete_basic_info
 ```
@@ -551,8 +641,9 @@ php artisan test --filter=test_can_submit_complete_basic_info
 - **LifestyleSurveyTest**: 13 tests - Step 3 생활 패턴
 - **HealthPreferenceSurveyTest**: 10 tests - Step 4 건강 & 선호도
 - **SurveyManagementTest**: 15 tests - 설문 관리 기능
+- **SurveySubmissionTest**: 12 tests - 설문 최종 제출
 
-**총 81개 테스트** - 설문 시스템의 모든 주요 기능 커버
+**총 93개 테스트** - 설문 시스템의 모든 주요 기능 커버
 
 ## 문의 및 개선 제안
 

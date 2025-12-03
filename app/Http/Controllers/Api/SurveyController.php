@@ -233,4 +233,45 @@ class SurveyController extends Controller
             'deleted_count' => $deletedCount,
         ], "{$surveyStep->displayName()} 단계의 답변이 삭제되었습니다.");
     }
+
+    /**
+     * 설문 최종 제출
+     *
+     * POST /api/surveys/{survey}/submit
+     */
+    public function submit(Request $request, Survey $survey): JsonResponse
+    {
+        try {
+            $result = $this->surveyService->submitSurvey(
+                $request->user(),
+                $survey
+            );
+
+            return response()->success($result, $result['message']);
+        } catch (ValidationException $e) {
+            return response()->validationError(
+                $e->errors(),
+                $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * 제출 여부 확인
+     *
+     * GET /api/surveys/{survey}/submission
+     */
+    public function getSubmission(Request $request, Survey $survey): JsonResponse
+    {
+        $submission = $this->surveyService->getSubmission(
+            $request->user(),
+            $survey
+        );
+
+        if (!$submission) {
+            return response()->notFound('제출 기록이 없습니다.');
+        }
+
+        return response()->success($submission);
+    }
 }
