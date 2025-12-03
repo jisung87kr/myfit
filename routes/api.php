@@ -51,6 +51,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{survey}/responses', [SurveyController::class, 'getResponses']);
         Route::get('/{survey}/progress', [SurveyController::class, 'getProgress']);
         Route::get('/{survey}/summary', [SurveyController::class, 'getSummary']);
+        Route::get('/{survey}/status', [SurveyController::class, 'getStatus']);
+        Route::delete('/{survey}/answers/{question}', [SurveyController::class, 'deleteAnswer']);
+        Route::delete('/{survey}/reset', [SurveyController::class, 'resetSurvey']);
+        Route::delete('/{survey}/steps/{step}', [SurveyController::class, 'deleteStepResponses']);
     });
 });
 

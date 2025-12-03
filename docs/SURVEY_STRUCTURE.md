@@ -359,6 +359,76 @@ Response:
 }
 ```
 
+### 6. 설문 상태 조회
+
+```bash
+GET /api/surveys/1/status
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "status": "in_progress",  // not_started, in_progress, completed
+    "total_questions": 31,
+    "answered_questions": 15,
+    "percentage": 48
+  }
+}
+```
+
+### 7. 특정 답변 삭제
+
+```bash
+DELETE /api/surveys/1/answers/5
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "message": "답변이 삭제되었습니다.",
+  "data": null
+}
+```
+
+### 8. 특정 단계 답변 삭제
+
+```bash
+DELETE /api/surveys/1/steps/1
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "confirm": true
+}
+
+Response:
+{
+  "success": true,
+  "message": "기본 정보 단계의 답변이 삭제되었습니다.",
+  "data": {
+    "step": 1,
+    "deleted_count": 8
+  }
+}
+```
+
+### 9. 설문 전체 초기화
+
+```bash
+DELETE /api/surveys/1/reset
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "message": "설문이 초기화되었습니다.",
+  "data": {
+    "deleted_count": 15
+  }
+}
+```
+
 ## 설문 데이터 시딩
 
 ### 개발 환경 설정
@@ -399,28 +469,90 @@ php artisan db:seed --class=SurveySeeder --force
 
 `is_required: false`인 질문은 건너뛸 수 있습니다.
 
+## 설문 관리 기능
+
+### 답변 삭제
+
+사용자는 제출한 답변을 개별적으로 삭제할 수 있습니다. 답변 삭제 시 자동으로 진행률이 업데이트됩니다.
+
+- 엔드포인트: `DELETE /api/surveys/{survey}/answers/{question}`
+- 자신의 답변만 삭제 가능
+- 삭제 후 진행률 자동 업데이트
+
+### 단계별 답변 삭제
+
+특정 단계의 모든 답변을 한번에 삭제할 수 있습니다. 실수 방지를 위해 `confirm` 파라미터가 필요합니다.
+
+- 엔드포인트: `DELETE /api/surveys/{survey}/steps/{step}`
+- `confirm: true` 필수
+- 해당 단계의 모든 답변 삭제
+- 다른 단계의 답변은 유지
+
+### 설문 초기화
+
+모든 답변을 삭제하고 설문을 처음부터 다시 시작할 수 있습니다.
+
+- 엔드포인트: `DELETE /api/surveys/{survey}/reset`
+- 모든 단계의 답변 삭제
+- 진행률 0%로 초기화
+- 다른 사용자의 답변에는 영향 없음
+
+### 설문 상태 확인
+
+현재 설문의 진행 상태를 간단하게 확인할 수 있습니다.
+
+- 엔드포인트: `GET /api/surveys/{survey}/status`
+- 상태 종류:
+  - `not_started`: 아직 답변 시작 전
+  - `in_progress`: 일부 답변 완료
+  - `completed`: 모든 질문 답변 완료
+- 전체 질문 수, 답변한 질문 수, 진행률 포함
+
 ## 향후 개발 계획
 
-1. **Step 2-5 질문 추가** (Epic 1.2의 나머지 Sub-Epics)
-2. **답변 기반 AI 플랜 생성** (Epic 1.3)
-3. **설문 결과 시각화** 대시보드
-4. **설문 응답 수정** 기능 개선
+1. **Step 5 질문 추가** (Epic 1.2.5 - Additional Info)
+2. **설문 결과 최종 제출** (Epic 1.2.7)
+3. **답변 기반 AI 플랜 생성** (Epic 1.3)
+4. **설문 결과 시각화** 대시보드
 5. **다국어 지원** (영어, 일본어 등)
 
 ## 테스트
 
-### 기본 정보 설문 테스트
+### 설문 테스트 실행
 
 ```bash
 # 모든 설문 테스트 실행
 php artisan test --filter=SurveyTest
 
-# 기본 정보 설문만 테스트
+# 기본 정보 설문 테스트
 php artisan test --filter=BasicInfoSurveyTest
+
+# 목표 설정 설문 테스트
+php artisan test --filter=GoalSettingSurveyTest
+
+# 생활 패턴 설문 테스트
+php artisan test --filter=LifestyleSurveyTest
+
+# 건강 & 선호도 설문 테스트
+php artisan test --filter=HealthPreferenceSurveyTest
+
+# 설문 관리 기능 테스트
+php artisan test --filter=SurveyManagementTest
 
 # 특정 테스트 케이스
 php artisan test --filter=test_can_submit_complete_basic_info
 ```
+
+### 테스트 커버리지
+
+- **SurveyTest**: 18 tests - 설문 인프라 및 핵심 기능
+- **BasicInfoSurveyTest**: 12 tests - Step 1 기본 정보
+- **GoalSettingSurveyTest**: 13 tests - Step 2 목표 설정
+- **LifestyleSurveyTest**: 13 tests - Step 3 생활 패턴
+- **HealthPreferenceSurveyTest**: 10 tests - Step 4 건강 & 선호도
+- **SurveyManagementTest**: 15 tests - 설문 관리 기능
+
+**총 81개 테스트** - 설문 시스템의 모든 주요 기능 커버
 
 ## 문의 및 개선 제안
 

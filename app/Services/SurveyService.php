@@ -245,4 +245,68 @@ class SurveyService
             'total_responses' => count($responses),
         ];
     }
+
+    /**
+     * 특정 질문의 답변 삭제
+     */
+    public function deleteAnswer(User $user, Survey $survey, int $questionId): bool
+    {
+        $question = SurveyQuestion::where('id', $questionId)
+            ->where('survey_id', $survey->id)
+            ->firstOrFail();
+
+        $deleted = UserSurveyResponse::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->where('survey_question_id', $questionId)
+            ->delete();
+
+        return $deleted > 0;
+    }
+
+    /**
+     * 설문 전체 응답 초기화
+     */
+    public function resetSurvey(User $user, Survey $survey): int
+    {
+        return UserSurveyResponse::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->delete();
+    }
+
+    /**
+     * 설문 상태 조회
+     */
+    public function getSurveyStatus(User $user, Survey $survey): array
+    {
+        $totalQuestions = $survey->questions()->count();
+        $answeredQuestions = UserSurveyResponse::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->distinct('survey_question_id')
+            ->count('survey_question_id');
+
+        $status = 'not_started';
+        if ($answeredQuestions > 0) {
+            $status = $answeredQuestions === $totalQuestions ? 'completed' : 'in_progress';
+        }
+
+        return [
+            'status' => $status,
+            'total_questions' => $totalQuestions,
+            'answered_questions' => $answeredQuestions,
+            'percentage' => $totalQuestions > 0 ? (int) (($answeredQuestions / $totalQuestions) * 100) : 0,
+        ];
+    }
+
+    /**
+     * 특정 단계의 응답 삭제
+     */
+    public function deleteStepResponses(User $user, Survey $survey, SurveyStep $step): int
+    {
+        return UserSurveyResponse::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->whereHas('question', function ($q) use ($step) {
+                $q->where('step', $step->value);
+            })
+            ->delete();
+    }
 }

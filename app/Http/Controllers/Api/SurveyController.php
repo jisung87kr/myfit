@@ -149,4 +149,88 @@ class SurveyController extends Controller
 
         return response()->success($summary);
     }
+
+    /**
+     * 특정 질문의 답변 삭제
+     *
+     * DELETE /api/surveys/{survey}/answers/{question}
+     */
+    public function deleteAnswer(Request $request, Survey $survey, int $questionId): JsonResponse
+    {
+        $deleted = $this->surveyService->deleteAnswer(
+            $request->user(),
+            $survey,
+            $questionId
+        );
+
+        if (!$deleted) {
+            return response()->notFound('삭제할 답변이 없습니다.');
+        }
+
+        return response()->success(null, '답변이 삭제되었습니다.');
+    }
+
+    /**
+     * 설문 전체 응답 초기화
+     *
+     * DELETE /api/surveys/{survey}/reset
+     */
+    public function resetSurvey(Request $request, Survey $survey): JsonResponse
+    {
+        $deletedCount = $this->surveyService->resetSurvey(
+            $request->user(),
+            $survey
+        );
+
+        return response()->success([
+            'deleted_count' => $deletedCount,
+        ], '설문이 초기화되었습니다.');
+    }
+
+    /**
+     * 설문 상태 조회
+     *
+     * GET /api/surveys/{survey}/status
+     */
+    public function getStatus(Request $request, Survey $survey): JsonResponse
+    {
+        $status = $this->surveyService->getSurveyStatus(
+            $request->user(),
+            $survey
+        );
+
+        return response()->success($status);
+    }
+
+    /**
+     * 특정 단계의 응답 삭제
+     *
+     * DELETE /api/surveys/{survey}/steps/{step}
+     */
+    public function deleteStepResponses(Request $request, Survey $survey, int $step): JsonResponse
+    {
+        $validated = $request->validate([
+            'confirm' => 'required|boolean|accepted',
+        ]);
+
+        $surveyStep = SurveyStep::tryFrom($step);
+
+        if (!$surveyStep) {
+            return response()->validationError(
+                ['step' => '유효하지 않은 단계입니다.'],
+                '유효하지 않은 단계입니다.'
+            );
+        }
+
+        $deletedCount = $this->surveyService->deleteStepResponses(
+            $request->user(),
+            $survey,
+            $surveyStep
+        );
+
+        return response()->success([
+            'step' => $step,
+            'deleted_count' => $deletedCount,
+        ], "{$surveyStep->displayName()} 단계의 답변이 삭제되었습니다.");
+    }
 }
