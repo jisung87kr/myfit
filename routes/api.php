@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SocialAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,12 @@ Route::post('/login', [AuthController::class, 'login']);
 // Password Reset
 Route::post('/password/email', [PasswordResetController::class, 'sendResetLink']);
 Route::post('/password/reset', [PasswordResetController::class, 'reset']);
+
+// Social Authentication
+Route::prefix('auth')->group(function () {
+    Route::get('/{provider}/redirect', [SocialAuthController::class, 'redirect']);
+    Route::post('/{provider}/callback', [SocialAuthController::class, 'callback']);
+});
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -27,6 +34,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/password', [ProfileController::class, 'changePassword']);
         Route::post('/profile/photo', [ProfileController::class, 'uploadPhoto']);
         Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto']);
+    });
+
+    // Social Account Management
+    Route::prefix('auth/social')->group(function () {
+        Route::get('/accounts', [SocialAuthController::class, 'connectedAccounts']);
+        Route::delete('/{provider}', [SocialAuthController::class, 'disconnect']);
     });
 });
 
