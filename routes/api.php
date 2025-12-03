@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalculationController;
+use App\Http\Controllers\Api\DietPlanController;
 use App\Http\Controllers\Api\ExerciseController;
 use App\Http\Controllers\Api\FoodController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -93,6 +94,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{exercise}', [ExerciseController::class, 'update']);
         Route::delete('/{exercise}', [ExerciseController::class, 'destroy']);
         Route::post('/{exercise}/calculate-calories', [ExerciseController::class, 'calculateCalories']);
+    });
+
+    // Diet Plans
+    Route::prefix('diet-plans')->group(function () {
+        Route::post('/generate', [DietPlanController::class, 'generate']);
+        Route::get('/generation-status/{id}', [DietPlanController::class, 'generationStatus']);
+        Route::get('/active', [DietPlanController::class, 'getActive']);
+        Route::get('/{id}', [DietPlanController::class, 'show']);
+        Route::get('/{id}/day/{day}', [DietPlanController::class, 'showDay']);
+        Route::post('/{id}/regenerate', [DietPlanController::class, 'regenerate']);
     });
 });
 
