@@ -57,4 +57,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(SocialAccount::class);
     }
+
+    /**
+     * Get the survey responses for the user.
+     */
+    public function surveyResponses()
+    {
+        return $this->hasMany(UserSurveyResponse::class);
+    }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
+use App\Http\Controllers\Api\SurveyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('auth/social')->group(function () {
         Route::get('/accounts', [SocialAuthController::class, 'connectedAccounts']);
         Route::delete('/{provider}', [SocialAuthController::class, 'disconnect']);
+    });
+
+    // Survey Management
+    Route::prefix('surveys')->group(function () {
+        Route::get('/', [SurveyController::class, 'index']);
+        Route::get('/{survey}/questions', [SurveyController::class, 'getQuestions']);
+        Route::post('/{survey}/answers', [SurveyController::class, 'submitAnswers']);
+        Route::get('/{survey}/responses', [SurveyController::class, 'getResponses']);
+        Route::get('/{survey}/progress', [SurveyController::class, 'getProgress']);
+        Route::get('/{survey}/summary', [SurveyController::class, 'getSummary']);
     });
 });
 
