@@ -35,11 +35,7 @@ class AuthController extends Controller
 
         $result = $this->authService->register($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => '회원가입이 완료되었습니다.',
-            'data' => $result,
-        ], 201);
+        return response()->created($result, '회원가입이 완료되었습니다.');
     }
 
     /**
@@ -58,11 +54,7 @@ class AuthController extends Controller
                 $request->password
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => '로그인 성공',
-                'data' => $result,
-            ]);
+            return response()->success($result, '로그인 성공');
         } catch (AuthenticationException $e) {
             throw ValidationException::withMessages([
                 'email' => [$e->getMessage()],
@@ -77,10 +69,7 @@ class AuthController extends Controller
     {
         $this->authService->logout($request->user());
 
-        return response()->json([
-            'success' => true,
-            'message' => '로그아웃되었습니다.',
-        ]);
+        return response()->success(null, '로그아웃되었습니다.');
     }
 
     /**
@@ -90,9 +79,6 @@ class AuthController extends Controller
     {
         $userInfo = $this->authService->getUserInfo($request->user());
 
-        return response()->json([
-            'success' => true,
-            'data' => $userInfo,
-        ]);
+        return response()->success($userInfo);
     }
 }

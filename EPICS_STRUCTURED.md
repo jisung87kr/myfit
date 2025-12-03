@@ -53,15 +53,17 @@
 
 **예시**:
 ```php
-// ✅ Good
+// ✅ Good - Response 매크로 사용
 public function register(RegisterRequest $request)
 {
     $user = $this->authService->register($request->validated());
+    return response()->created($user, '회원가입이 완료되었습니다.');
+}
 
-    return response()->json([
-        'success' => true,
-        'data' => $user,
-    ], 201);
+public function show($id)
+{
+    $data = $this->service->getData($id);
+    return response()->success($data);
 }
 
 // ❌ Bad - 비즈니스 로직이 컨트롤러에 있음
@@ -76,6 +78,15 @@ public function register(Request $request)
     return response()->json(['token' => $token]);
 }
 ```
+
+**Response 매크로**:
+- `response()->success($data, $message)` - 성공 응답 (200)
+- `response()->created($data, $message)` - 생성 성공 (201)
+- `response()->error($message, $errors, $code)` - 에러 응답
+- `response()->validationError($errors, $message)` - 검증 실패 (422)
+- `response()->unauthorized($message)` - 인증 필요 (401)
+- `response()->forbidden($message)` - 권한 없음 (403)
+- `response()->notFound($message)` - 찾을 수 없음 (404)
 
 #### 2. **Service Layer** (서비스)
 **책임**:

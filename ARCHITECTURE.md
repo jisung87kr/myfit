@@ -102,6 +102,74 @@ class AuthController extends Controller
 }
 ```
 
+**Response 매크로 사용**:
+
+컨트롤러에서는 표준화된 응답 매크로를 사용합니다:
+
+```php
+// ✅ Good - Response 매크로 사용
+public function register(RegisterRequest $request)
+{
+    $result = $this->authService->register($request->validated());
+    return response()->created($result, '회원가입이 완료되었습니다.');
+}
+
+public function login(LoginRequest $request)
+{
+    $result = $this->authService->login($request->email, $request->password);
+    return response()->success($result, '로그인 성공');
+}
+
+public function logout(Request $request)
+{
+    $this->authService->logout($request->user());
+    return response()->success(null, '로그아웃되었습니다.');
+}
+
+// 에러 응답
+public function someMethod()
+{
+    return response()->error('오류 메시지', $errors, 400);
+    return response()->validationError($errors, '입력값을 확인해주세요.');
+    return response()->unauthorized('인증이 필요합니다.');
+    return response()->forbidden('권한이 없습니다.');
+    return response()->notFound('리소스를 찾을 수 없습니다.');
+}
+```
+
+**사용 가능한 Response 매크로**:
+
+| 매크로 | 설명 | HTTP 코드 |
+|-------|------|----------|
+| `response()->success($data, $message, $code)` | 성공 응답 | 200 (기본) |
+| `response()->created($data, $message)` | 생성 성공 | 201 |
+| `response()->noContent()` | 내용 없음 | 204 |
+| `response()->error($message, $errors, $code)` | 에러 응답 | 400 (기본) |
+| `response()->validationError($errors, $message)` | 검증 실패 | 422 |
+| `response()->unauthorized($message)` | 인증 필요 | 401 |
+| `response()->forbidden($message)` | 권한 없음 | 403 |
+| `response()->notFound($message)` | 찾을 수 없음 | 404 |
+
+**응답 형식**:
+
+성공 응답:
+```json
+{
+    "success": true,
+    "message": "메시지 (선택)",
+    "data": { ... }
+}
+```
+
+에러 응답:
+```json
+{
+    "success": false,
+    "message": "에러 메시지",
+    "errors": { ... }
+}
+```
+
 ---
 
 ### 2. Service Layer (서비스)
