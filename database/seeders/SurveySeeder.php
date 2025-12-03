@@ -35,6 +35,9 @@ class SurveySeeder extends Seeder
         // Step 3: 생활 패턴 질문들
         $this->createLifestyleQuestions($survey);
 
+        // Step 4: 건강 & 선호도 질문들
+        $this->createHealthPreferenceQuestions($survey);
+
         $this->command->info('Survey seeded successfully!');
         $this->command->info("Survey ID: {$survey->id}");
         $this->command->info('Total questions: ' . SurveyQuestion::count());
@@ -385,5 +388,147 @@ class SurveySeeder extends Seeder
         }
 
         $this->command->info('Step 3 (생활 패턴): 9 questions created');
+    }
+
+    /**
+     * Step 4: 건강 & 선호도 질문 생성
+     */
+    private function createHealthPreferenceQuestions(Survey $survey): void
+    {
+        $questions = [
+            [
+                'question_text' => '알레르기가 있거나 먹지 못하는 음식이 있나요?',
+                'question_type' => QuestionType::MULTI_SELECT,
+                'options' => [
+                    '없음',
+                    '유제품 (우유, 치즈 등)',
+                    '해산물',
+                    '견과류',
+                    '계란',
+                    '밀가루 (글루텐)',
+                    '콩류',
+                    '기타',
+                ],
+                'is_required' => true,
+                'order' => 1,
+            ],
+            [
+                'question_text' => '선호하는 음식 종류를 선택해주세요 (복수 선택)',
+                'question_type' => QuestionType::MULTI_SELECT,
+                'options' => [
+                    '한식',
+                    '양식',
+                    '중식',
+                    '일식',
+                    '샐러드',
+                    '과일',
+                    '육류',
+                    '생선',
+                    '채소',
+                    '곡물/잡곡',
+                ],
+                'is_required' => true,
+                'order' => 2,
+            ],
+            [
+                'question_text' => '기피하는 음식이 있나요?',
+                'question_type' => QuestionType::MULTI_SELECT,
+                'options' => [
+                    '없음',
+                    '매운 음식',
+                    '기름진 음식',
+                    '날것 (회, 육회 등)',
+                    '내장류',
+                    '특정 채소 (쓴맛 등)',
+                    '유제품',
+                    '해산물',
+                ],
+                'is_required' => false,
+                'order' => 3,
+            ],
+            [
+                'question_text' => '현재 앓고 있거나 과거에 진단받은 질환이 있나요?',
+                'question_type' => QuestionType::MULTI_SELECT,
+                'options' => [
+                    '없음',
+                    '당뇨병',
+                    '고혈압',
+                    '고지혈증',
+                    '갑상선 질환',
+                    '소화기 질환',
+                    '심혈관 질환',
+                    '관절염',
+                    '기타',
+                ],
+                'is_required' => true,
+                'order' => 4,
+            ],
+            [
+                'question_text' => '현재 복용 중인 약이나 영양제가 있나요?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '없음',
+                    '처방약 복용 중',
+                    '영양제만 복용 중',
+                    '처방약과 영양제 모두 복용',
+                ],
+                'is_required' => false,
+                'order' => 5,
+            ],
+            [
+                'question_text' => '식단 제한이 필요한 종교나 신념이 있나요?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '없음',
+                    '채식주의 (비건)',
+                    '채식주의 (락토/오보)',
+                    '할랄',
+                    '코셔',
+                    '기타',
+                ],
+                'is_required' => false,
+                'order' => 6,
+            ],
+            [
+                'question_text' => '외식 빈도는 어느 정도인가요?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '거의 안 함 (주 0-1회)',
+                    '가끔 (주 2-3회)',
+                    '자주 (주 4-5회)',
+                    '매우 자주 (주 6회 이상)',
+                    '거의 매끼',
+                ],
+                'is_required' => true,
+                'order' => 7,
+            ],
+            [
+                'question_text' => '간식을 주로 언제 먹나요?',
+                'question_type' => QuestionType::MULTI_SELECT,
+                'options' => [
+                    '먹지 않음',
+                    '오전',
+                    '오후',
+                    '저녁 후',
+                    '불규칙적',
+                ],
+                'is_required' => false,
+                'order' => 8,
+            ],
+        ];
+
+        foreach ($questions as $questionData) {
+            SurveyQuestion::create([
+                'survey_id' => $survey->id,
+                'step' => SurveyStep::HEALTH_PREFERENCE,
+                'question_text' => $questionData['question_text'],
+                'question_type' => $questionData['question_type'],
+                'options' => $questionData['options'],
+                'is_required' => $questionData['is_required'],
+                'order' => $questionData['order'],
+            ]);
+        }
+
+        $this->command->info('Step 4 (건강 & 선호도): 8 questions created');
     }
 }
