@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalculationController;
+use App\Http\Controllers\Api\ExerciseController;
+use App\Http\Controllers\Api\FoodController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
@@ -69,6 +71,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/target-calories', [CalculationController::class, 'calculateTargetCalories']);
         Route::post('/calculate', [CalculationController::class, 'calculate']);
         Route::get('/latest', [CalculationController::class, 'getLatest']);
+    });
+
+    // Foods Management
+    Route::prefix('foods')->group(function () {
+        Route::get('/', [FoodController::class, 'index']);
+        Route::get('/categories', [FoodController::class, 'categories']);
+        Route::get('/{food}', [FoodController::class, 'show']);
+        Route::post('/', [FoodController::class, 'store']);
+        Route::put('/{food}', [FoodController::class, 'update']);
+        Route::delete('/{food}', [FoodController::class, 'destroy']);
+    });
+
+    // Exercises Management
+    Route::prefix('exercises')->group(function () {
+        Route::get('/', [ExerciseController::class, 'index']);
+        Route::get('/categories', [ExerciseController::class, 'categories']);
+        Route::get('/intensities', [ExerciseController::class, 'intensities']);
+        Route::get('/{exercise}', [ExerciseController::class, 'show']);
+        Route::post('/', [ExerciseController::class, 'store']);
+        Route::put('/{exercise}', [ExerciseController::class, 'update']);
+        Route::delete('/{exercise}', [ExerciseController::class, 'destroy']);
+        Route::post('/{exercise}/calculate-calories', [ExerciseController::class, 'calculateCalories']);
     });
 });
 
