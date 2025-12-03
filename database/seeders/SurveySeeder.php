@@ -32,6 +32,9 @@ class SurveySeeder extends Seeder
         // Step 2: 목표 설정 질문들
         $this->createGoalSettingQuestions($survey);
 
+        // Step 3: 생활 패턴 질문들
+        $this->createLifestyleQuestions($survey);
+
         $this->command->info('Survey seeded successfully!');
         $this->command->info("Survey ID: {$survey->id}");
         $this->command->info('Total questions: ' . SurveyQuestion::count());
@@ -239,5 +242,148 @@ class SurveySeeder extends Seeder
         }
 
         $this->command->info('Step 2 (목표 설정): 6 questions created');
+    }
+
+    /**
+     * Step 3: 생활 패턴 질문 생성
+     */
+    private function createLifestyleQuestions(Survey $survey): void
+    {
+        $questions = [
+            [
+                'question_text' => '평균 수면 시간은 얼마나 되나요?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '5시간 미만',
+                    '5-6시간',
+                    '6-7시간',
+                    '7-8시간',
+                    '8시간 이상',
+                ],
+                'is_required' => true,
+                'order' => 1,
+            ],
+            [
+                'question_text' => '하루 평균 식사 횟수는?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '1회',
+                    '2회',
+                    '3회',
+                    '4회 이상',
+                    '불규칙',
+                ],
+                'is_required' => true,
+                'order' => 2,
+            ],
+            [
+                'question_text' => '주로 식사하는 시간대를 선택해주세요',
+                'question_type' => QuestionType::MULTI_SELECT,
+                'options' => [
+                    '아침 (06:00-09:00)',
+                    '오전 간식 (09:00-12:00)',
+                    '점심 (12:00-14:00)',
+                    '오후 간식 (14:00-18:00)',
+                    '저녁 (18:00-21:00)',
+                    '야식 (21:00 이후)',
+                ],
+                'is_required' => true,
+                'order' => 3,
+            ],
+            [
+                'question_text' => '야식(밤 9시 이후)을 얼마나 자주 먹나요?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '거의 안 먹음',
+                    '주 1-2회',
+                    '주 3-4회',
+                    '주 5-6회',
+                    '거의 매일',
+                ],
+                'is_required' => true,
+                'order' => 4,
+            ],
+            [
+                'question_text' => '현재 직업/활동 유형은?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '사무직 (주로 앉아서 근무)',
+                    '서비스직 (주로 서서 근무)',
+                    '육체 노동직',
+                    '학생',
+                    '주부',
+                    '프리랜서/재택근무',
+                    '무직/구직 중',
+                ],
+                'is_required' => true,
+                'order' => 5,
+            ],
+            [
+                'question_text' => '평소 스트레스 수준은?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '매우 낮음',
+                    '낮음',
+                    '보통',
+                    '높음',
+                    '매우 높음',
+                ],
+                'is_required' => true,
+                'order' => 6,
+            ],
+            [
+                'question_text' => '하루 물 섭취량은 얼마나 되나요?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '500ml 미만',
+                    '500ml-1L',
+                    '1L-1.5L',
+                    '1.5L-2L',
+                    '2L 이상',
+                ],
+                'is_required' => false,
+                'order' => 7,
+            ],
+            [
+                'question_text' => '음주 빈도는?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '거의 안 함',
+                    '월 1-2회',
+                    '주 1-2회',
+                    '주 3-4회',
+                    '거의 매일',
+                ],
+                'is_required' => false,
+                'order' => 8,
+            ],
+            [
+                'question_text' => '흡연 여부는?',
+                'question_type' => QuestionType::SELECT,
+                'options' => [
+                    '비흡연',
+                    '과거 흡연 (현재 금연)',
+                    '하루 반 갑 미만',
+                    '하루 반 갑-1갑',
+                    '하루 1갑 이상',
+                ],
+                'is_required' => false,
+                'order' => 9,
+            ],
+        ];
+
+        foreach ($questions as $questionData) {
+            SurveyQuestion::create([
+                'survey_id' => $survey->id,
+                'step' => SurveyStep::LIFESTYLE,
+                'question_text' => $questionData['question_text'],
+                'question_type' => $questionData['question_type'],
+                'options' => $questionData['options'],
+                'is_required' => $questionData['is_required'],
+                'order' => $questionData['order'],
+            ]);
+        }
+
+        $this->command->info('Step 3 (생활 패턴): 9 questions created');
     }
 }
