@@ -1,0 +1,16 @@
+.git
+.gitignore
+.gitattributes
+.editorconfig
+README.md
+.env
+.env.example
+node_modules
+npm-debug.log
+vendor
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+.phpunit.result.cache

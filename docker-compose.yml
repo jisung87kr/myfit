@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: myfit_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/apache-config.conf:/etc/apache2/sites-available/000-default.conf
+    ports:
+      - "8000:80"
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/public
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - myfit_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: myfit_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: myfit
+      MYSQL_USER: myfit_user
+      MYSQL_PASSWORD: myfit_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - myfit_network
+
+  redis:
+    image: redis:alpine
+    container_name: myfit_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - myfit_network
+
+networks:
+  myfit_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
