@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalculationController;
 use App\Http\Controllers\Api\DietPlanController;
 use App\Http\Controllers\Api\ExerciseController;
+use App\Http\Controllers\Api\ExerciseLogController;
 use App\Http\Controllers\Api\FoodController;
 use App\Http\Controllers\Api\MealLogController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -123,6 +124,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [MealLogController::class, 'destroy']);
         Route::get('/summary', [MealLogController::class, 'summary']);
         Route::post('/from-plan', [MealLogController::class, 'logFromPlan']);
+    });
+
+    // Daily Exercise Logging
+    Route::prefix('daily-logs/exercises')->group(function () {
+        Route::get('/', [ExerciseLogController::class, 'index']);
+        Route::post('/', [ExerciseLogController::class, 'store']);
+        Route::put('/{id}', [ExerciseLogController::class, 'update']);
+        Route::delete('/{id}', [ExerciseLogController::class, 'destroy']);
+        Route::get('/summary', [ExerciseLogController::class, 'summary']);
+        Route::post('/from-plan', [ExerciseLogController::class, 'logFromPlan']);
     });
 });
 
