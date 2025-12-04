@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalculationController;
+use App\Http\Controllers\Api\DailyDashboardController;
 use App\Http\Controllers\Api\DietPlanController;
 use App\Http\Controllers\Api\ExerciseController;
 use App\Http\Controllers\Api\ExerciseLogController;
@@ -147,6 +148,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/history', [WeightLogController::class, 'history']);
         Route::get('/progress', [WeightLogController::class, 'progress']);
         Route::get('/statistics', [WeightLogController::class, 'statistics']);
+    });
+
+    // Daily Dashboard
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/show', [DailyDashboardController::class, 'show']);
+        Route::get('/today', [DailyDashboardController::class, 'today']);
+        Route::get('/weekly-summary', [DailyDashboardController::class, 'weeklySummary']);
+        Route::get('/quick-stats', [DailyDashboardController::class, 'quickStats']);
     });
 });
 
