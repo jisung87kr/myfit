@@ -104,6 +104,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [DietPlanController::class, 'show']);
         Route::get('/{id}/day/{day}', [DietPlanController::class, 'showDay']);
         Route::post('/{id}/regenerate', [DietPlanController::class, 'regenerate']);
+
+        // Meal replacement
+        Route::put('/meals/{mealItemId}/replace', [DietPlanController::class, 'replaceMealItem']);
+        Route::get('/meals/{mealItemId}/suggestions', [DietPlanController::class, 'getMealReplacementSuggestions']);
+
+        // Exercise replacement
+        Route::put('/exercises/{exerciseId}/replace', [DietPlanController::class, 'replaceExercise']);
+        Route::get('/exercises/{exerciseId}/suggestions', [DietPlanController::class, 'getExerciseReplacementSuggestions']);
     });
 });
 

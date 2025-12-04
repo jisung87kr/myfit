@@ -402,4 +402,171 @@ PROMPT;
         // Create new plan
         return $this->generatePlan($dietPlan->user, $dietPlan->survey_response_id);
     }
+
+    /**
+     * Replace a meal item with a similar food
+     */
+    public function replaceMealItem(MealPlanItem $mealItem, ?int $replacementFoodId = null): MealPlanItem
+    {
+        $oldCalories = $mealItem->calories;
+        $oldCategory = $mealItem->food?->category;
+
+        // If specific food provided, use it
+        if ($replacementFoodId) {
+            $replacementFood = Food::findOrFail($replacementFoodId);
+        } else {
+            // Find similar food automatically
+            $replacementFood = $this->findSimilarFood($oldCalories, $oldCategory, $mealItem->food_id);
+        }
+
+        if (!$replacementFood) {
+            throw new \Exception('No suitable replacement food found');
+        }
+
+        // Calculate serving size to match calories
+        $servingRatio = $oldCalories / $replacementFood->calories;
+        $newServingSize = $replacementFood->serving_size * $servingRatio;
+
+        // Update meal item
+        $mealItem->update([
+            'food_id' => $replacementFood->id,
+            'food_name' => $replacementFood->name,
+            'serving_size' => round($newServingSize, 2),
+            'calories' => round($replacementFood->calories * $servingRatio, 2),
+            'protein_g' => round($replacementFood->protein_g * $servingRatio, 2),
+            'carbs_g' => round($replacementFood->carbs_g * $servingRatio, 2),
+            'fat_g' => round($replacementFood->fat_g * $servingRatio, 2),
+        ]);
+
+        // Recalculate daily totals
+        $mealItem->dailyMealPlan->recalculateTotals();
+
+        return $mealItem->fresh();
+    }
+
+    /**
+     * Replace an exercise with a similar one
+     */
+    public function replaceExercise(DailyExercisePlan $exercisePlan, ?int $replacementExerciseId = null): DailyExercisePlan
+    {
+        $oldIntensity = $exercisePlan->intensity;
+        $oldCategory = $exercisePlan->exercise?->category;
+        $oldCalories = $exercisePlan->estimated_calories_burned;
+
+        // If specific exercise provided, use it
+        if ($replacementExerciseId) {
+            $replacementExercise = Exercise::findOrFail($replacementExerciseId);
+        } else {
+            // Find similar exercise automatically
+            $replacementExercise = $this->findSimilarExercise($oldIntensity, $oldCategory, $exercisePlan->exercise_id);
+        }
+
+        if (!$replacementExercise) {
+            throw new \Exception('No suitable replacement exercise found');
+        }
+
+        // Keep similar duration but adjust for different intensity
+        $newDuration = $exercisePlan->duration_minutes;
+
+        // Update exercise plan
+        $exercisePlan->update([
+            'exercise_id' => $replacementExercise->id,
+            'exercise_name' => $replacementExercise->name,
+            'duration_minutes' => $newDuration,
+            'estimated_calories_burned' => round($replacementExercise->calories_per_hour_per_kg * 70 * ($newDuration / 60), 2),
+            'intensity' => $replacementExercise->intensity,
+        ]);
+
+        return $exercisePlan->fresh();
+    }
+
+    /**
+     * Find similar food by calories and category
+     */
+    private function findSimilarFood(float $targetCalories, ?string $category, ?int $excludeFoodId): ?Food
+    {
+        $query = Food::query();
+
+        // Same category if available
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        // Exclude current food
+        if ($excludeFoodId) {
+            $query->where('id', '!=', $excludeFoodId);
+        }
+
+        // Find food with similar calories (±20%)
+        $minCalories = $targetCalories * 0.8;
+        $maxCalories = $targetCalories * 1.2;
+
+        return $query->whereBetween('calories', [$minCalories, $maxCalories])
+            ->inRandomOrder()
+            ->first();
+    }
+
+    /**
+     * Find similar exercise by intensity and category
+     */
+    private function findSimilarExercise(string $intensity, ?string $category, ?int $excludeExerciseId): ?Exercise
+    {
+        $query = Exercise::query();
+
+        // Same intensity
+        $query->where('intensity', $intensity);
+
+        // Same category if available
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        // Exclude current exercise
+        if ($excludeExerciseId) {
+            $query->where('id', '!=', $excludeExerciseId);
+        }
+
+        return $query->inRandomOrder()->first();
+    }
+
+    /**
+     * Get replacement suggestions for a meal item
+     */
+    public function getMealReplacementSuggestions(MealPlanItem $mealItem, int $limit = 5): array
+    {
+        $targetCalories = $mealItem->calories;
+        $category = $mealItem->food?->category;
+
+        $minCalories = $targetCalories * 0.8;
+        $maxCalories = $targetCalories * 1.2;
+
+        $query = Food::query()
+            ->where('id', '!=', $mealItem->food_id)
+            ->whereBetween('calories', [$minCalories, $maxCalories]);
+
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        return $query->limit($limit)->get()->toArray();
+    }
+
+    /**
+     * Get replacement suggestions for an exercise
+     */
+    public function getExerciseReplacementSuggestions(DailyExercisePlan $exercisePlan, int $limit = 5): array
+    {
+        $intensity = $exercisePlan->intensity;
+        $category = $exercisePlan->exercise?->category;
+
+        $query = Exercise::query()
+            ->where('id', '!=', $exercisePlan->exercise_id)
+            ->where('intensity', $intensity);
+
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        return $query->limit($limit)->get()->toArray();
+    }
 }

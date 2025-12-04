@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\GenerateDietPlanJob;
+use App\Models\DailyExercisePlan;
 use App\Models\DietPlan;
+use App\Models\MealPlanItem;
 use App\Services\DietPlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -244,6 +246,136 @@ class DietPlanController extends Controller
             ],
             202
         );
+    }
+
+    /**
+     * Replace a meal item
+     */
+    public function replaceMealItem(Request $request, int $mealItemId): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'replacement_food_id' => 'nullable|exists:foods,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->error('Validation failed', $validator->errors(), 422);
+        }
+
+        $mealItem = MealPlanItem::find($mealItemId);
+
+        if (!$mealItem) {
+            return response()->notFound('Meal item not found');
+        }
+
+        // Check authorization
+        $dietPlan = $mealItem->dailyMealPlan->dietPlan;
+        if ($dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this meal item');
+        }
+
+        try {
+            $updatedItem = $this->dietPlanService->replaceMealItem(
+                $mealItem,
+                $request->replacement_food_id
+            );
+
+            return response()->success('Meal item replaced successfully', [
+                'meal_item' => $this->formatMealItem($updatedItem),
+                'daily_totals' => [
+                    'total_calories' => $updatedItem->dailyMealPlan->total_calories,
+                    'total_protein_g' => $updatedItem->dailyMealPlan->total_protein_g,
+                    'total_carbs_g' => $updatedItem->dailyMealPlan->total_carbs_g,
+                    'total_fat_g' => $updatedItem->dailyMealPlan->total_fat_g,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->error($e->getMessage(), null, 400);
+        }
+    }
+
+    /**
+     * Get replacement suggestions for a meal item
+     */
+    public function getMealReplacementSuggestions(int $mealItemId): JsonResponse
+    {
+        $mealItem = MealPlanItem::find($mealItemId);
+
+        if (!$mealItem) {
+            return response()->notFound('Meal item not found');
+        }
+
+        // Check authorization
+        $dietPlan = $mealItem->dailyMealPlan->dietPlan;
+        if ($dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this meal item');
+        }
+
+        $suggestions = $this->dietPlanService->getMealReplacementSuggestions($mealItem);
+
+        return response()->success('Replacement suggestions retrieved', $suggestions);
+    }
+
+    /**
+     * Replace an exercise
+     */
+    public function replaceExercise(Request $request, int $exerciseId): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'replacement_exercise_id' => 'nullable|exists:exercises,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->error('Validation failed', $validator->errors(), 422);
+        }
+
+        $exercisePlan = DailyExercisePlan::find($exerciseId);
+
+        if (!$exercisePlan) {
+            return response()->notFound('Exercise plan not found');
+        }
+
+        // Check authorization
+        if ($exercisePlan->dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this exercise plan');
+        }
+
+        try {
+            $updatedExercise = $this->dietPlanService->replaceExercise(
+                $exercisePlan,
+                $request->replacement_exercise_id
+            );
+
+            return response()->success('Exercise replaced successfully', [
+                'id' => $updatedExercise->id,
+                'exercise_name' => $updatedExercise->exercise_name,
+                'duration_minutes' => $updatedExercise->duration_minutes,
+                'estimated_calories_burned' => $updatedExercise->estimated_calories_burned,
+                'intensity' => $updatedExercise->intensity,
+            ]);
+        } catch (\Exception $e) {
+            return response()->error($e->getMessage(), null, 400);
+        }
+    }
+
+    /**
+     * Get replacement suggestions for an exercise
+     */
+    public function getExerciseReplacementSuggestions(int $exerciseId): JsonResponse
+    {
+        $exercisePlan = DailyExercisePlan::find($exerciseId);
+
+        if (!$exercisePlan) {
+            return response()->notFound('Exercise plan not found');
+        }
+
+        // Check authorization
+        if ($exercisePlan->dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this exercise plan');
+        }
+
+        $suggestions = $this->dietPlanService->getExerciseReplacementSuggestions($exercisePlan);
+
+        return response()->success('Replacement suggestions retrieved', $suggestions);
     }
 
     /**

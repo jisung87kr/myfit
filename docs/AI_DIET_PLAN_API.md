@@ -429,6 +429,263 @@ Create a new plan and archive the old one.
 
 ---
 
+### 7. Replace Meal Item
+
+Replace a meal item with a different food (manual or automatic).
+
+**Endpoint:** `PUT /api/diet-plans/meals/{mealItemId}/replace`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `mealItemId` (integer): Meal plan item ID to replace
+
+**Request Body:**
+```json
+{
+  "replacement_food_id": 123  // Optional: specific food to use
+}
+```
+
+**Request Parameters:**
+- `replacement_food_id` (integer, optional): ID of specific food to use as replacement. If omitted, system automatically finds similar food.
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Meal item replaced successfully",
+  "data": {
+    "meal_item": {
+      "id": 1001,
+      "food_name": "현미밥",
+      "serving_size": 210,
+      "calories": 300,
+      "protein_g": 6,
+      "carbs_g": 60,
+      "fat_g": 1.5,
+      "notes": null
+    },
+    "daily_totals": {
+      "total_calories": 1490,
+      "total_protein_g": 113,
+      "total_carbs_g": 145,
+      "total_fat_g": 51
+    }
+  }
+}
+```
+
+**Replacement Logic:**
+- **Manual**: If `replacement_food_id` provided, uses that specific food
+- **Automatic**: Finds food with:
+  - Same category (if available)
+  - Similar calories (±20%)
+  - Random selection from matches
+- Serving size automatically adjusted to match calorie target
+- Daily totals automatically recalculated
+
+**Error Responses:**
+
+404 Not Found:
+```json
+{
+  "success": false,
+  "message": "Meal item not found"
+}
+```
+
+403 Forbidden:
+```json
+{
+  "success": false,
+  "message": "You do not have access to this meal item"
+}
+```
+
+400 Bad Request:
+```json
+{
+  "success": false,
+  "message": "No suitable replacement food found"
+}
+```
+
+---
+
+### 8. Get Meal Replacement Suggestions
+
+Get a list of suggested foods for replacement.
+
+**Endpoint:** `GET /api/diet-plans/meals/{mealItemId}/suggestions`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `mealItemId` (integer): Meal plan item ID
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Replacement suggestions retrieved",
+  "data": [
+    {
+      "id": 5,
+      "name": "현미밥",
+      "name_en": "Brown Rice",
+      "category": "곡류",
+      "serving_size": 210,
+      "calories": 280,
+      "protein_g": 6,
+      "carbs_g": 60,
+      "fat_g": 1.5
+    },
+    {
+      "id": 12,
+      "name": "잡곡밥",
+      "name_en": "Mixed Grain Rice",
+      "category": "곡류",
+      "serving_size": 210,
+      "calories": 290,
+      "protein_g": 6.5,
+      "carbs_g": 62,
+      "fat_g": 1.8
+    }
+    // ... up to 5 suggestions
+  ]
+}
+```
+
+**Notes:**
+- Returns up to 5 similar foods
+- Same category preference
+- Calories within ±20% of original
+- Excludes current food
+
+---
+
+### 9. Replace Exercise
+
+Replace an exercise with a different one (manual or automatic).
+
+**Endpoint:** `PUT /api/diet-plans/exercises/{exerciseId}/replace`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `exerciseId` (integer): Daily exercise plan ID to replace
+
+**Request Body:**
+```json
+{
+  "replacement_exercise_id": 45  // Optional: specific exercise to use
+}
+```
+
+**Request Parameters:**
+- `replacement_exercise_id` (integer, optional): ID of specific exercise. If omitted, system finds similar exercise.
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Exercise replaced successfully",
+  "data": {
+    "id": 2001,
+    "exercise_name": "조깅",
+    "duration_minutes": 30,
+    "estimated_calories_burned": 245,
+    "intensity": "보통"
+  }
+}
+```
+
+**Replacement Logic:**
+- **Manual**: If `replacement_exercise_id` provided, uses that exercise
+- **Automatic**: Finds exercise with:
+  - Same intensity level
+  - Same category (if available)
+  - Random selection from matches
+- Duration maintained
+- Calories recalculated based on new exercise
+
+**Error Responses:**
+
+404 Not Found:
+```json
+{
+  "success": false,
+  "message": "Exercise plan not found"
+}
+```
+
+403 Forbidden:
+```json
+{
+  "success": false,
+  "message": "You do not have access to this exercise plan"
+}
+```
+
+400 Bad Request:
+```json
+{
+  "success": false,
+  "message": "No suitable replacement exercise found"
+}
+```
+
+---
+
+### 10. Get Exercise Replacement Suggestions
+
+Get a list of suggested exercises for replacement.
+
+**Endpoint:** `GET /api/diet-plans/exercises/{exerciseId}/suggestions`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `exerciseId` (integer): Daily exercise plan ID
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Replacement suggestions retrieved",
+  "data": [
+    {
+      "id": 3,
+      "name": "조깅",
+      "category": "유산소",
+      "intensity": "보통",
+      "met_value": 7.0,
+      "calories_per_hour_per_kg": 7.0,
+      "description": "천천히 달리기"
+    },
+    {
+      "id": 8,
+      "name": "사이클링",
+      "category": "유산소",
+      "intensity": "보통",
+      "met_value": 6.8,
+      "calories_per_hour_per_kg": 6.8,
+      "description": "자전거 타기"
+    }
+    // ... up to 5 suggestions
+  ]
+}
+```
+
+**Notes:**
+- Returns up to 5 similar exercises
+- Same intensity level
+- Same category preference
+- Excludes current exercise
+
+---
+
 ## Data Models
 
 ### Diet Plan
