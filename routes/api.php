@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SurveyController;
+use App\Http\Controllers\Api\WeightLogController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -134,6 +135,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [ExerciseLogController::class, 'destroy']);
         Route::get('/summary', [ExerciseLogController::class, 'summary']);
         Route::post('/from-plan', [ExerciseLogController::class, 'logFromPlan']);
+    });
+
+    // Weight Logging
+    Route::prefix('weight-logs')->group(function () {
+        Route::get('/show', [WeightLogController::class, 'show']);
+        Route::post('/', [WeightLogController::class, 'store']);
+        Route::put('/{id}', [WeightLogController::class, 'update']);
+        Route::delete('/{id}', [WeightLogController::class, 'destroy']);
+        Route::get('/latest', [WeightLogController::class, 'latest']);
+        Route::get('/history', [WeightLogController::class, 'history']);
+        Route::get('/progress', [WeightLogController::class, 'progress']);
+        Route::get('/statistics', [WeightLogController::class, 'statistics']);
     });
 });
 
