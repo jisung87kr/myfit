@@ -33,8 +33,20 @@ Route::middleware('auth')->group(function () {
 
     // Profile
     Route::get('/profile', function () {
-        return view('profile.show');
-    })->name('profile.show');
+        return view('profile.edit');
+    })->name('profile.edit');
+
+    // Survey
+    Route::get('/survey', function () {
+        return view('survey.index');
+    })->name('survey.index');
+
+    // Tools
+    Route::prefix('tools')->name('tools.')->group(function () {
+        Route::get('/calorie-calculator', function () {
+            return view('tools.calorie-calculator');
+        })->name('calorie-calculator');
+    });
 
     // Meals
     Route::prefix('meals')->name('meals.')->group(function () {
