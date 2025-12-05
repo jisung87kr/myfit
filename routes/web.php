@@ -72,6 +72,13 @@ Route::middleware('auth')->group(function () {
         })->name('index');
     });
 
+    // Summary
+    Route::prefix('summary')->name('summary.')->group(function () {
+        Route::get('/weekly', function () {
+            return view('summary.weekly');
+        })->name('weekly');
+    });
+
     // Logout (using POST method)
     Route::post('/logout', function () {
         auth()->logout();
