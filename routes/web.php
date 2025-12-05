@@ -63,10 +63,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/', function () {
             return view('weight.index');
         })->name('index');
-
-        Route::get('/create', function () {
-            return view('weight.create');
-        })->name('create');
     });
 
     // Diet Plan
