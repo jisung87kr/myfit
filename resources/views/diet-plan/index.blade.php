@@ -404,7 +404,7 @@ Vue.createApp({
             this.errorMessage = '';
 
             try {
-                const response = await axios.post('/diet-plans/generate', this.generateForm);
+                const response = await axios.post('/api/diet-plans/generate', this.generateForm);
 
                 if (response.data.success) {
                     window.dispatchEvent(new CustomEvent('show-toast', {

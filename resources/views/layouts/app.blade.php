@@ -26,17 +26,10 @@
         }
     </script>
 
-    <!-- Custom Styles -->
-    <style>
-        [v-cloak] {
-            display: none;
-        }
-    </style>
-
     @stack('styles')
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <div id="app" v-cloak>
+    <div id="app">
         <!-- Navigation -->
         @auth
         <nav class="bg-white shadow-sm border-b border-gray-200">
@@ -117,26 +110,6 @@
         <main class="@auth py-6 @endauth">
             @yield('content')
         </main>
-
-        <!-- Toast Notifications -->
-        <div v-if="toast.show"
-             class="fixed bottom-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5">
-            <div class="p-4">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <i :class="toast.type === 'success' ? 'fas fa-check-circle text-green-500' : 'fas fa-exclamation-circle text-red-500'" class="text-xl"></i>
-                    </div>
-                    <div class="ml-3 w-0 flex-1 pt-0.5">
-                        <p class="text-sm font-medium text-gray-900">@{{ toast.message }}</p>
-                    </div>
-                    <div class="ml-4 flex-shrink-0 flex">
-                        <button @click="hideToast" class="inline-flex text-gray-400 hover:text-gray-500">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Vue.js 3 CDN -->
@@ -149,78 +122,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Base Vue App -->
-    <script>
-        const { createApp } = Vue;
-
-        // Axios setup
-        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-        axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').content;
-        axios.defaults.baseURL = '/api';
-
-        @auth
-        // Set auth token from localStorage or session
-        const token = localStorage.getItem('auth_token') || '{{ session("auth_token") }}';
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        }
-        @endauth
-
-        // Click outside directive
-        const clickOutside = {
-            beforeMount(el, binding) {
-                el._clickOutside = (event) => {
-                    if (!(el === event.target || el.contains(event.target))) {
-                        binding.value(event);
-                    }
-                };
-                document.addEventListener('click', el._clickOutside);
-            },
-            unmounted(el) {
-                document.removeEventListener('click', el._clickOutside);
-            }
-        };
-
-        const app = createApp({
-            data() {
-                return {
-                    loading: false,
-                    dropdownOpen: false,
-                    toast: {
-                        show: false,
-                        message: '',
-                        type: 'success'
-                    }
-                }
-            },
-            methods: {
-                toggleDropdown() {
-                    this.dropdownOpen = !this.dropdownOpen;
-                },
-                closeDropdown() {
-                    this.dropdownOpen = false;
-                },
-                showToast(message, type = 'success') {
-                    this.toast.message = message;
-                    this.toast.type = type;
-                    this.toast.show = true;
-                    setTimeout(() => this.hideToast(), 3000);
-                },
-                hideToast() {
-                    this.toast.show = false;
-                },
-                formatNumber(num) {
-                    return Number(num).toFixed(1);
-                },
-                formatDate(date) {
-                    return new Date(date).toLocaleDateString('ko-KR');
-                }
-            }
-        });
-
-        app.directive('click-outside', clickOutside);
-        app.mount('#app');
-    </script>
-
     @stack('scripts')
 </body>
 </html>
