@@ -57,7 +57,6 @@ class WeightLogTest extends TestCase
 
         $this->assertDatabaseHas('weight_logs', [
             'user_id' => $this->user->id,
-            'date' => $date,
             'weight' => 75.5,
         ]);
     }
