@@ -12,7 +12,9 @@ services:
       - ./:/var/www/html
       - ./docker/php/apache-config.conf:/etc/apache2/sites-available/000-default.conf
     ports:
-      - "8000:80"
+      - "9910:80"
+      - "9911:443"
+      - "9912:9912"
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html/public
     depends_on:
@@ -26,12 +28,12 @@ services:
     container_name: myfit_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_ROOT_PASSWORD: 111111
       MYSQL_DATABASE: myfit
-      MYSQL_USER: myfit_user
-      MYSQL_PASSWORD: myfit_password
+      MYSQL_USER: myfit
+      MYSQL_PASSWORD: 111111
     ports:
-      - "3306:3306"
+      - "9913:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -42,7 +44,7 @@ services:
     container_name: myfit_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "9914:6379"
     volumes:
       - redis_data:/data
     networks:
