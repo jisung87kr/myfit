@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('daily_meal_plan_id')->constrained()->onDelete('cascade');
             $table->enum('meal_type', ['breakfast', 'lunch', 'dinner', 'snack']);
-            $table->foreignId('food_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('food_id')->nullable()->constrained('foods')->onDelete('set null');
             $table->string('food_name');
             $table->decimal('serving_size', 8, 2);
             $table->decimal('calories', 8, 2);

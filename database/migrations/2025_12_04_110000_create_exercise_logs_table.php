@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->date('date');
-            $table->foreignId('exercise_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('exercise_id')->nullable()->constrained('exercises')->onDelete('set null');
             $table->string('exercise_name');
             $table->integer('duration_minutes');
             $table->decimal('calories_burned', 8, 2);

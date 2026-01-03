@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('diet_plan_id')->constrained()->onDelete('cascade');
             $table->integer('day_number')->comment('1-7');
             $table->date('date');
-            $table->foreignId('exercise_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('exercise_id')->nullable()->constrained('exercises')->onDelete('set null');
             $table->string('exercise_name');
             $table->integer('duration_minutes');
             $table->decimal('estimated_calories_burned', 8, 2);
