@@ -37,11 +37,11 @@ class MealLogController extends Controller
             'snack' => $meals->where('meal_type', 'snack')->values(),
         ];
 
-        return response()->success('Meal logs retrieved successfully', [
+        return response()->success([
             'date' => $request->date,
             'meals' => $groupedMeals,
             'total_count' => $meals->count(),
-        ]);
+        ], 'Meal logs retrieved successfully');
     }
 
     /**
@@ -86,7 +86,7 @@ class MealLogController extends Controller
 
         $mealLog = MealLog::create($data);
 
-        return response()->success('Meal logged successfully', $mealLog, 201);
+        return response()->created($mealLog, 'Meal logged successfully');
     }
 
     /**
@@ -125,7 +125,7 @@ class MealLogController extends Controller
 
         $mealLog->update($validator->validated());
 
-        return response()->success('Meal log updated successfully', $mealLog);
+        return response()->success($mealLog, 'Meal log updated successfully');
     }
 
     /**
@@ -146,7 +146,7 @@ class MealLogController extends Controller
 
         $mealLog->delete();
 
-        return response()->success('Meal log deleted successfully');
+        return response()->success(null, 'Meal log deleted successfully');
     }
 
     /**
@@ -178,7 +178,7 @@ class MealLogController extends Controller
                 : 0;
         }
 
-        return response()->success('Daily summary retrieved successfully', $summary);
+        return response()->success($summary, 'Daily summary retrieved successfully');
     }
 
     /**
@@ -219,6 +219,6 @@ class MealLogController extends Controller
             'notes' => '플랜에서 추가',
         ]);
 
-        return response()->success('Meal logged from plan successfully', $mealLog, 201);
+        return response()->created($mealLog, 'Meal logged from plan successfully');
     }
 }

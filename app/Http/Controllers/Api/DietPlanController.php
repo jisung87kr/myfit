@@ -56,11 +56,11 @@ class DietPlanController extends Controller
         GenerateDietPlanJob::dispatch($dietPlan);
 
         return response()->success(
-            'Diet plan generation started. Check status using the provided ID.',
             [
                 'diet_plan_id' => $dietPlan->id,
                 'status' => $dietPlan->status,
             ],
+            'Diet plan generation started. Check status using the provided ID.',
             202
         );
     }
@@ -81,13 +81,13 @@ class DietPlanController extends Controller
             return response()->forbidden('You do not have access to this diet plan');
         }
 
-        return response()->success('Generation status retrieved', [
+        return response()->success([
             'diet_plan_id' => $dietPlan->id,
             'status' => $dietPlan->status,
             'is_generating' => $dietPlan->isGenerating(),
             'is_active' => $dietPlan->isActive(),
             'created_at' => $dietPlan->created_at,
-        ]);
+        ], 'Generation status retrieved');
     }
 
     /**
@@ -101,7 +101,7 @@ class DietPlanController extends Controller
             return response()->error('No active diet plan found', null, 404);
         }
 
-        return response()->success('Active diet plan retrieved', [
+        return response()->success([
             'id' => $activePlan->id,
             'status' => $activePlan->status,
             'start_date' => $activePlan->start_date,
@@ -135,7 +135,7 @@ class DietPlanController extends Controller
                     })->values(),
                 ];
             })->values(),
-        ]);
+        ], 'Active diet plan retrieved');
     }
 
     /**
@@ -154,7 +154,7 @@ class DietPlanController extends Controller
             return response()->forbidden('You do not have access to this diet plan');
         }
 
-        return response()->success('Diet plan retrieved', [
+        return response()->success([
             'id' => $dietPlan->id,
             'status' => $dietPlan->status,
             'start_date' => $dietPlan->start_date,
@@ -163,7 +163,7 @@ class DietPlanController extends Controller
             'ai_summary' => $dietPlan->ai_summary,
             'daily_meal_plans' => $dietPlan->dailyMealPlans,
             'daily_exercise_plans' => $dietPlan->dailyExercisePlans,
-        ]);
+        ], 'Diet plan retrieved');
     }
 
     /**
@@ -193,7 +193,7 @@ class DietPlanController extends Controller
             return response()->error('No meal plan found for this day', null, 404);
         }
 
-        return response()->success('Day plan retrieved', [
+        return response()->success([
             'day_number' => $day,
             'date' => $dayPlan['date'],
             'meals' => $this->groupMealsByType($dayPlan['meals']->mealItems),
@@ -212,7 +212,7 @@ class DietPlanController extends Controller
                     'notes' => $exercise->notes,
                 ];
             }),
-        ]);
+        ], 'Day plan retrieved');
     }
 
     /**
@@ -238,12 +238,12 @@ class DietPlanController extends Controller
         GenerateDietPlanJob::dispatch($newPlan);
 
         return response()->success(
-            'Diet plan regeneration started',
             [
                 'old_plan_id' => $dietPlan->id,
                 'new_plan_id' => $newPlan->id,
                 'status' => $newPlan->status,
             ],
+            'Diet plan regeneration started',
             202
         );
     }
@@ -279,7 +279,7 @@ class DietPlanController extends Controller
                 $request->replacement_food_id
             );
 
-            return response()->success('Meal item replaced successfully', [
+            return response()->success([
                 'meal_item' => $this->formatMealItem($updatedItem),
                 'daily_totals' => [
                     'total_calories' => $updatedItem->dailyMealPlan->total_calories,
@@ -287,7 +287,7 @@ class DietPlanController extends Controller
                     'total_carbs_g' => $updatedItem->dailyMealPlan->total_carbs_g,
                     'total_fat_g' => $updatedItem->dailyMealPlan->total_fat_g,
                 ],
-            ]);
+            ], 'Meal item replaced successfully');
         } catch (\Exception $e) {
             return response()->error($e->getMessage(), null, 400);
         }
@@ -312,7 +312,7 @@ class DietPlanController extends Controller
 
         $suggestions = $this->dietPlanService->getMealReplacementSuggestions($mealItem);
 
-        return response()->success('Replacement suggestions retrieved', $suggestions);
+        return response()->success($suggestions, 'Replacement suggestions retrieved');
     }
 
     /**
@@ -345,13 +345,13 @@ class DietPlanController extends Controller
                 $request->replacement_exercise_id
             );
 
-            return response()->success('Exercise replaced successfully', [
+            return response()->success([
                 'id' => $updatedExercise->id,
                 'exercise_name' => $updatedExercise->exercise_name,
                 'duration_minutes' => $updatedExercise->duration_minutes,
                 'estimated_calories_burned' => $updatedExercise->estimated_calories_burned,
                 'intensity' => $updatedExercise->intensity,
-            ]);
+            ], 'Exercise replaced successfully');
         } catch (\Exception $e) {
             return response()->error($e->getMessage(), null, 400);
         }
@@ -375,7 +375,7 @@ class DietPlanController extends Controller
 
         $suggestions = $this->dietPlanService->getExerciseReplacementSuggestions($exercisePlan);
 
-        return response()->success('Replacement suggestions retrieved', $suggestions);
+        return response()->success($suggestions, 'Replacement suggestions retrieved');
     }
 
     /**

@@ -82,7 +82,7 @@ class DailyDashboardController extends Controller
             ];
         }
 
-        return response()->success('Daily dashboard retrieved successfully', $dashboard);
+        return response()->success($dashboard, 'Daily dashboard retrieved successfully');
     }
 
     /**
@@ -145,7 +145,7 @@ class DailyDashboardController extends Controller
             ];
         }
 
-        return response()->success("Today's dashboard retrieved successfully", $dashboard);
+        return response()->success($dashboard, "Today's dashboard retrieved successfully");
     }
 
     /**
@@ -241,7 +241,7 @@ class DailyDashboardController extends Controller
 
         $weeklySummary['daily_breakdown'] = $dailyBreakdown;
 
-        return response()->success('Weekly summary retrieved successfully', $weeklySummary);
+        return response()->success($weeklySummary, 'Weekly summary retrieved successfully');
     }
 
     /**
@@ -282,7 +282,7 @@ class DailyDashboardController extends Controller
             ],
         ];
 
-        return response()->success('Quick stats retrieved successfully', $stats);
+        return response()->success($stats, 'Quick stats retrieved successfully');
     }
 
     /**
@@ -391,7 +391,7 @@ class DailyDashboardController extends Controller
 
         $monthlySummary['weekly_breakdown'] = $weeklyBreakdown;
 
-        return response()->success('Monthly summary retrieved successfully', $monthlySummary);
+        return response()->success($monthlySummary, 'Monthly summary retrieved successfully');
     }
 
     /**
@@ -402,7 +402,7 @@ class DailyDashboardController extends Controller
         $user = auth()->user();
         $stats = $this->getStreakStats($user->id);
 
-        return response()->success('Streak statistics retrieved successfully', $stats);
+        return response()->success($stats, 'Streak statistics retrieved successfully');
     }
 
     /**

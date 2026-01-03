@@ -18,9 +18,9 @@ class NotificationSettingController extends Controller
         $user = auth()->user();
         $settings = $user->getNotificationSettings();
 
-        return response()->success('Notification settings retrieved successfully', [
+        return response()->success([
             'settings' => $settings,
-        ]);
+        ], 'Notification settings retrieved successfully');
     }
 
     /**
@@ -66,9 +66,9 @@ class NotificationSettingController extends Controller
             'push_enabled',
         ]));
 
-        return response()->success('Notification settings updated successfully', [
+        return response()->success([
             'settings' => $settings->fresh(),
-        ]);
+        ], 'Notification settings updated successfully');
     }
 
     /**
@@ -80,9 +80,9 @@ class NotificationSettingController extends Controller
         $settings = $user->getNotificationSettings();
         $settings->update(NotificationSetting::getDefaults());
 
-        return response()->success('Notification settings reset to defaults', [
+        return response()->success([
             'settings' => $settings->fresh(),
-        ]);
+        ], 'Notification settings reset to defaults');
     }
 
     /**
@@ -103,9 +103,9 @@ class NotificationSettingController extends Controller
         $settingName = $request->setting;
         $settings->update([$settingName => !$settings->$settingName]);
 
-        return response()->success('Setting toggled successfully', [
+        return response()->success([
             'setting' => $settingName,
             'value' => $settings->fresh()->$settingName,
-        ]);
+        ], 'Setting toggled successfully');
     }
 }

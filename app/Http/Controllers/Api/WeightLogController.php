@@ -31,7 +31,7 @@ class WeightLogController extends Controller
             return response()->error('No weight log found for this date', null, 404);
         }
 
-        return response()->success('Weight log retrieved successfully', $weightLog);
+        return response()->success($weightLog, 'Weight log retrieved successfully');
     }
 
     /**
@@ -81,7 +81,7 @@ class WeightLogController extends Controller
             $response['previous_date'] = $previousLog->date->format('Y-m-d');
         }
 
-        return response()->success('Weight logged successfully', $response, 201);
+        return response()->created($response, 'Weight logged successfully');
     }
 
     /**
@@ -111,7 +111,7 @@ class WeightLogController extends Controller
 
         $weightLog->update($validator->validated());
 
-        return response()->success('Weight log updated successfully', $weightLog);
+        return response()->success($weightLog, 'Weight log updated successfully');
     }
 
     /**
@@ -132,7 +132,7 @@ class WeightLogController extends Controller
 
         $weightLog->delete();
 
-        return response()->success('Weight log deleted successfully');
+        return response()->success(null, 'Weight log deleted successfully');
     }
 
     /**
@@ -146,7 +146,7 @@ class WeightLogController extends Controller
             return response()->error('No weight logs found', null, 404);
         }
 
-        return response()->success('Latest weight retrieved successfully', $latestLog);
+        return response()->success($latestLog, 'Latest weight retrieved successfully');
     }
 
     /**
@@ -166,11 +166,11 @@ class WeightLogController extends Controller
 
         $history = WeightLog::getHistory(auth()->id(), $days);
 
-        return response()->success('Weight history retrieved successfully', [
+        return response()->success([
             'period_days' => $days,
             'entry_count' => $history->count(),
             'weights' => $history,
-        ]);
+        ], 'Weight history retrieved successfully');
     }
 
     /**
@@ -184,7 +184,7 @@ class WeightLogController extends Controller
             return response()->error('No weight logs found', null, 404);
         }
 
-        return response()->success('Weight progress retrieved successfully', $progress);
+        return response()->success($progress, 'Weight progress retrieved successfully');
     }
 
     /**
@@ -211,6 +211,6 @@ class WeightLogController extends Controller
             return response()->error('No weight logs found for the specified period', null, 404);
         }
 
-        return response()->success('Weight statistics retrieved successfully', $statistics);
+        return response()->success($statistics, 'Weight statistics retrieved successfully');
     }
 }

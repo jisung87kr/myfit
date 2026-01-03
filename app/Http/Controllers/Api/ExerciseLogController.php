@@ -30,11 +30,11 @@ class ExerciseLogController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        return response()->success('Exercise logs retrieved successfully', [
+        return response()->success([
             'date' => $request->date,
             'exercises' => $exercises,
             'total_count' => $exercises->count(),
-        ]);
+        ], 'Exercise logs retrieved successfully');
     }
 
     /**
@@ -77,7 +77,7 @@ class ExerciseLogController extends Controller
 
         $exerciseLog = ExerciseLog::create($data);
 
-        return response()->success('Exercise logged successfully', $exerciseLog, 201);
+        return response()->created($exerciseLog, 'Exercise logged successfully');
     }
 
     /**
@@ -112,7 +112,7 @@ class ExerciseLogController extends Controller
 
         $exerciseLog->update($validator->validated());
 
-        return response()->success('Exercise log updated successfully', $exerciseLog);
+        return response()->success($exerciseLog, 'Exercise log updated successfully');
     }
 
     /**
@@ -133,7 +133,7 @@ class ExerciseLogController extends Controller
 
         $exerciseLog->delete();
 
-        return response()->success('Exercise log deleted successfully');
+        return response()->success(null, 'Exercise log deleted successfully');
     }
 
     /**
@@ -151,7 +151,7 @@ class ExerciseLogController extends Controller
 
         $summary = ExerciseLog::getDailySummary(auth()->id(), $request->date);
 
-        return response()->success('Daily exercise summary retrieved successfully', $summary);
+        return response()->success($summary, 'Daily exercise summary retrieved successfully');
     }
 
     /**
@@ -189,6 +189,6 @@ class ExerciseLogController extends Controller
             'notes' => '플랜에서 추가',
         ]);
 
-        return response()->success('Exercise logged from plan successfully', $exerciseLog, 201);
+        return response()->created($exerciseLog, 'Exercise logged from plan successfully');
     }
 }
