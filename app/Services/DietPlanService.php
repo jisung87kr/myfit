@@ -121,6 +121,15 @@ class DietPlanService
      */
     private function buildPrompt(array $userData, DietPlan $dietPlan): string
     {
+        // Convert arrays to strings for prompt
+        $dislikedFoods = is_array($userData['disliked_foods'])
+            ? implode(', ', $userData['disliked_foods'])
+            : ($userData['disliked_foods'] ?: '없음');
+
+        $preferredFoods = is_array($userData['preferred_foods'])
+            ? implode(', ', $userData['preferred_foods'])
+            : ($userData['preferred_foods'] ?: '한식');
+
         return <<<PROMPT
 당신은 영양학과 운동 전문가입니다. 다음 사용자 정보를 바탕으로 7일간의 맞춤형 다이어트 플랜을 작성해주세요.
 
@@ -136,8 +145,8 @@ class DietPlanService
 - 활동량: {$userData['activity_level']}
 - 운동 경험: {$userData['exercise_experience']}
 - 하루 식사 횟수: {$userData['meals_per_day']}
-- 선호 음식: {$userData['preferred_foods']}
-- 싫어하는 재료: {$userData['disliked_foods']}
+- 선호 음식: {$preferredFoods}
+- 싫어하는 재료: {$dislikedFoods}
 - 식이 제한: {$userData['dietary_restrictions']}
 - 조리 가능 여부: {$userData['can_cook']}
 

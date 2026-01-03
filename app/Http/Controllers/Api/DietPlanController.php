@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\GenerateDietPlanJob;
 use App\Models\DailyExercisePlan;
 use App\Models\DietPlan;
 use App\Models\MealPlanItem;
@@ -52,17 +51,21 @@ class DietPlanController extends Controller
             $request->survey_response_id
         );
 
-        // Dispatch job for async generation
-        GenerateDietPlanJob::dispatch($dietPlan);
+        try {
+            // Generate the plan with AI directly
+            $this->dietPlanService->generateWithAI($dietPlan);
 
-        return response()->success(
-            [
-                'diet_plan_id' => $dietPlan->id,
-                'status' => $dietPlan->status,
-            ],
-            'Diet plan generation started. Check status using the provided ID.',
-            202
-        );
+            return response()->success(
+                [
+                    'diet_plan_id' => $dietPlan->id,
+                    'status' => $dietPlan->status,
+                ],
+                'Diet plan generated successfully'
+            );
+        } catch (\Exception $e) {
+            $dietPlan->markAsFailed();
+            return response()->error('Failed to generate diet plan: ' . $e->getMessage(), null, 500);
+        }
     }
 
     /**
@@ -234,18 +237,22 @@ class DietPlanController extends Controller
         // Create new plan
         $newPlan = $this->dietPlanService->regeneratePlan($dietPlan);
 
-        // Dispatch job for async generation
-        GenerateDietPlanJob::dispatch($newPlan);
+        try {
+            // Generate the plan with AI directly
+            $this->dietPlanService->generateWithAI($newPlan);
 
-        return response()->success(
-            [
-                'old_plan_id' => $dietPlan->id,
-                'new_plan_id' => $newPlan->id,
-                'status' => $newPlan->status,
-            ],
-            'Diet plan regeneration started',
-            202
-        );
+            return response()->success(
+                [
+                    'old_plan_id' => $dietPlan->id,
+                    'new_plan_id' => $newPlan->id,
+                    'status' => $newPlan->status,
+                ],
+                'Diet plan regenerated successfully'
+            );
+        } catch (\Exception $e) {
+            $newPlan->markAsFailed();
+            return response()->error('Failed to regenerate diet plan: ' . $e->getMessage(), null, 500);
+        }
     }
 
     /**

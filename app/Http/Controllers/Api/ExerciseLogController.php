@@ -38,6 +38,25 @@ class ExerciseLogController extends Controller
     }
 
     /**
+     * Get a specific exercise log
+     */
+    public function show(int $id): JsonResponse
+    {
+        $exerciseLog = ExerciseLog::find($id);
+
+        if (!$exerciseLog) {
+            return response()->notFound('Exercise log not found');
+        }
+
+        // Check authorization
+        if ($exerciseLog->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this exercise log');
+        }
+
+        return response()->success($exerciseLog, 'Exercise log retrieved successfully');
+    }
+
+    /**
      * Store a new exercise log
      */
     public function store(Request $request): JsonResponse

@@ -316,10 +316,10 @@ Vue.createApp({
         async loadDashboard() {
             this.loading = true;
             try {
-                const statsResponse = await axios.get('/dashboard/quick-stats');
+                const statsResponse = await axios.get('/api/dashboard/quick-stats');
                 this.dashboard = statsResponse.data.data;
 
-                const todayResponse = await axios.get('/dashboard/today');
+                const todayResponse = await axios.get('/api/dashboard/today');
                 if (todayResponse.data.data) {
                     this.todayData = todayResponse.data.data;
                 }

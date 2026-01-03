@@ -316,7 +316,7 @@ Vue.createApp({
         async loadMeals() {
             this.loading = true;
             try {
-                const response = await axios.get(`/daily-logs/meals?date=${this.selectedDate}`);
+                const response = await axios.get(`/api/daily-logs/meals?date=${this.selectedDate}`);
                 const data = response.data.data;
 
                 this.meals = data.meals;
@@ -327,7 +327,7 @@ Vue.createApp({
                     total_fat_g: data.total_count > 0 ? this.calculateTotal('fat_g') : 0
                 };
 
-                const summaryResponse = await axios.get(`/daily-logs/meals/summary?date=${this.selectedDate}`);
+                const summaryResponse = await axios.get(`/api/daily-logs/meals/summary?date=${this.selectedDate}`);
                 const summaryData = summaryResponse.data.data;
 
                 if (summaryData.target_calories) {
@@ -373,7 +373,7 @@ Vue.createApp({
             if (!this.mealToDelete) return;
 
             try {
-                await axios.delete(`/daily-logs/meals/${this.mealToDelete.id}`);
+                await axios.delete(`/api/daily-logs/meals/${this.mealToDelete.id}`);
                 this.showToast('식사 기록이 삭제되었습니다.', 'success');
                 this.showDeleteModal = false;
                 this.mealToDelete = null;

@@ -14,7 +14,7 @@
         <!-- Left Column: Stats & Chart (Span 8) -->
         <div class="lg:col-span-8 space-y-8">
             <!-- Stats Grid -->
-            <div v-if="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div v-if="stats && stats.has_data" class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <!-- Current -->
                 <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
                     <div class="flex items-center gap-2 mb-3 text-gray-500 text-xs font-bold uppercase tracking-wider">
@@ -22,23 +22,23 @@
                         현재 체중
                     </div>
                     <div class="flex items-baseline gap-1">
-                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ stats.current_weight || '-' }}</span>
+                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ stats.latest_weight || '-' }}</span>
                         <span class="text-sm text-gray-500 font-medium">kg</span>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2">@{{ stats.last_recorded ? formatDate(stats.last_recorded) : '-' }}</p>
+                    <p class="text-xs text-gray-400 mt-2">@{{ stats.latest_date ? formatDate(stats.latest_date) : '-' }}</p>
                 </div>
 
-                <!-- Goal -->
+                <!-- Start -->
                 <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
                     <div class="flex items-center gap-2 mb-3 text-gray-500 text-xs font-bold uppercase tracking-wider">
                         <div class="w-2 h-2 rounded-full bg-accent-500"></div>
-                        목표 체중
+                        시작 체중
                     </div>
                     <div class="flex items-baseline gap-1">
-                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ stats.target_weight || '-' }}</span>
+                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ stats.start_weight || '-' }}</span>
                         <span class="text-sm text-gray-500 font-medium">kg</span>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2">Goal</p>
+                    <p class="text-xs text-gray-400 mt-2">@{{ stats.start_date ? formatDate(stats.start_date) : '-' }}</p>
                 </div>
 
                 <!-- Change -->
@@ -48,23 +48,24 @@
                         총 변화
                     </div>
                     <div class="flex items-baseline gap-1">
-                        <span class="text-3xl font-bold font-heading" :class="getWeightChangeClass(stats.change_from_start)">
-                            @{{ formatWeightChange(stats.change_from_start) }}
+                        <span class="text-3xl font-bold font-heading" :class="getWeightChangeClass(stats.weight_change)">
+                            @{{ formatWeightChange(stats.weight_change) }}
                         </span>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2">Since Start</p>
+                    <p class="text-xs text-gray-400 mt-2">@{{ stats.total_days }}일간</p>
                 </div>
 
-                <!-- Remaining -->
+                <!-- Percentage Change -->
                 <div class="bg-gradient-to-br from-primary-600 to-accent-600 rounded-3xl p-5 shadow-lg shadow-primary-500/20 text-white transform hover:-translate-y-1 transition-transform">
                     <div class="flex items-center gap-2 mb-3 text-primary-100 text-xs font-bold uppercase tracking-wider">
                         <div class="w-2 h-2 rounded-full bg-white"></div>
-                        남은 목표
+                        변화율
                     </div>
                     <div class="flex items-baseline gap-1">
-                        <span class="text-3xl font-bold font-heading">@{{ formatWeightChange(stats.remaining_to_goal) }}</span>
+                        <span class="text-3xl font-bold font-heading">@{{ stats.percentage_change ? stats.percentage_change.toFixed(1) : '0' }}</span>
+                        <span class="text-sm font-medium">%</span>
                     </div>
-                    <p class="text-xs text-primary-100 mt-2">To Go</p>
+                    <p class="text-xs text-primary-100 mt-2">@{{ stats.total_entries }}회 기록</p>
                 </div>
             </div>
 
@@ -124,7 +125,7 @@
                             <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">체중 (kg)</label>
                             <input
                                 type="number"
-                                v-model.number="form.weight_kg"
+                                v-model.number="form.weight"
                                 required
                                 min="0"
                                 step="0.1"
@@ -170,7 +171,7 @@
                 <div class="p-6 border-b border-gray-100 bg-gray-50/50">
                     <h3 class="font-bold text-gray-900 font-heading">최근 기록</h3>
                 </div>
-                
+
                 <div v-if="loadingHistory" class="p-8 text-center">
                     <div class="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
                 </div>
@@ -185,11 +186,11 @@
                                     <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                                 </div>
                                 <div>
-                                    <p class="font-bold text-gray-900">@{{ record.weight_kg }}kg</p>
+                                    <p class="font-bold text-gray-900">@{{ record.weight }}kg</p>
                                     <p class="text-xs text-gray-500">@{{ formatDateTime(record.date) }}</p>
                                 </div>
                             </div>
-                            
+
                             <div class="flex items-center gap-3">
                                 <span v-if="index < weightHistory.length - 1" class="text-xs font-bold" :class="getWeightDelta(record, index) <= 0 ? 'text-green-600' : 'text-red-500'">
                                     @{{ formatWeightChange(getWeightDelta(record, index)) }}
@@ -206,7 +207,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div v-else class="p-8 text-center text-gray-500 text-sm">
                     기록이 없습니다.
                 </div>
@@ -222,7 +223,7 @@
             </div>
             <h3 class="text-lg font-bold text-gray-900 text-center mb-2 font-heading">기록 삭제</h3>
             <p class="text-gray-500 text-center text-sm mb-6">
-                <span class="font-bold text-gray-700">@{{ recordToDelete?.weight_kg }}kg</span> 기록을 삭제하시겠습니까?<br>복구할 수 없습니다.
+                <span class="font-bold text-gray-700">@{{ recordToDelete?.weight }}kg</span> 기록을 삭제하시겠습니까?<br>복구할 수 없습니다.
             </p>
             <div class="flex gap-3">
                 <button @click="showDeleteModal = false" class="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium cursor-pointer">
@@ -257,7 +258,7 @@ Vue.createApp({
             form: {
                 date: new Date().toISOString().split('T')[0],
                 time: new Date().toTimeString().slice(0, 5),
-                weight_kg: null,
+                weight: null,
                 notes: ''
             },
             isEditMode: false,
@@ -277,7 +278,7 @@ Vue.createApp({
     methods: {
         async loadStats() {
             try {
-                const response = await axios.get('/daily-logs/weight/stats');
+                const response = await axios.get('/api/weight-logs/progress');
                 this.stats = response.data.data || {};
             } catch (error) {
                 console.error('Failed to load stats:', error);
@@ -285,8 +286,8 @@ Vue.createApp({
         },
         async loadWeightData() {
             try {
-                const response = await axios.get(`/daily-logs/weight?period=${this.chartPeriod}`);
-                this.weightData = response.data.data || [];
+                const response = await axios.get(`/api/weight-logs/history?days=${this.chartPeriod}`);
+                this.weightData = response.data.data?.weights || [];
                 this.renderChart();
             } catch (error) {
                 console.error('Failed to load weight data:', error);
@@ -295,8 +296,8 @@ Vue.createApp({
         async loadWeightHistory() {
             this.loadingHistory = true;
             try {
-                const response = await axios.get('/daily-logs/weight/history');
-                this.weightHistory = response.data.data || [];
+                const response = await axios.get('/api/weight-logs/history');
+                this.weightHistory = response.data.data?.weights || [];
             } catch (error) {
                 console.error('Failed to load weight history:', error);
             } finally {
@@ -313,14 +314,14 @@ Vue.createApp({
             }
 
             const ctx = this.$refs.weightChart.getContext('2d');
-            
+
             // Create gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, 300);
             gradient.addColorStop(0, 'rgba(6, 182, 212, 0.2)');
             gradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
 
             const labels = this.weightData.map(d => this.formatDate(d.date));
-            const weights = this.weightData.map(d => d.weight_kg);
+            const weights = this.weightData.map(d => d.weight);
             const targetWeight = this.stats?.target_weight;
 
             this.chart = new Chart(ctx, {
@@ -394,15 +395,26 @@ Vue.createApp({
         async handleSubmit() {
             this.loading = true;
             try {
+                // Check if a record already exists for this date
+                let existingRecord = null;
+                if (!this.isEditMode && Array.isArray(this.weightHistory)) {
+                    existingRecord = this.weightHistory.find(r => r.date === this.form.date);
+                }
+
                 const url = this.isEditMode
-                    ? `/daily-logs/weight/${this.editingId}`
-                    : '/daily-logs/weight';
-                const method = this.isEditMode ? 'put' : 'post';
+                    ? `/api/weight-logs/${this.editingId}`
+                    : existingRecord
+                        ? `/api/weight-logs/${existingRecord.id}`
+                        : '/api/weight-logs';
+                const method = (this.isEditMode || existingRecord) ? 'put' : 'post';
+
+
 
                 const response = await axios[method](url, this.form);
 
                 if (response.data.success) {
-                    if (window.showToast) window.showToast(this.isEditMode ? '체중이 수정되었습니다.' : '체중이 기록되었습니다.', 'success');
+                    const message = existingRecord ? '기존 기록이 수정되었습니다.' : (this.isEditMode ? '체중이 수정되었습니다.' : '체중이 기록되었습니다.');
+                    if (window.showToast) window.showToast(message, 'success');
                     this.resetForm();
                     this.loadStats();
                     this.loadWeightData();
@@ -410,7 +422,8 @@ Vue.createApp({
                 }
             } catch (error) {
                 console.error('Save failed:', error);
-                if (window.showToast) window.showToast('저장에 실패했습니다.', 'error');
+                const errorMsg = error.response?.data?.message || '저장에 실패했습니다.';
+                if (window.showToast) window.showToast(errorMsg, 'error');
             } finally {
                 this.loading = false;
             }
@@ -421,7 +434,7 @@ Vue.createApp({
             this.form = {
                 date: record.date,
                 time: record.time || '',
-                weight_kg: record.weight_kg,
+                weight: record.weight,
                 notes: record.notes || ''
             };
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -435,7 +448,7 @@ Vue.createApp({
             this.form = {
                 date: new Date().toISOString().split('T')[0],
                 time: new Date().toTimeString().slice(0, 5),
-                weight_kg: null,
+                weight: null,
                 notes: ''
             };
         },
@@ -447,7 +460,7 @@ Vue.createApp({
             if (!this.recordToDelete) return;
             this.deleting = true;
             try {
-                await axios.delete(`/daily-logs/weight/${this.recordToDelete.id}`);
+                await axios.delete(`/api/weight-logs/${this.recordToDelete.id}`);
                 if (window.showToast) window.showToast('체중 기록이 삭제되었습니다.', 'success');
                 this.showDeleteModal = false;
                 this.recordToDelete = null;
@@ -462,7 +475,7 @@ Vue.createApp({
         },
         getWeightDelta(record, index) {
             if (index >= this.weightHistory.length - 1) return 0;
-            return record.weight_kg - this.weightHistory[index + 1].weight_kg;
+            return record.weight - this.weightHistory[index + 1].weight;
         },
         getWeightChangeIconClass(record, index) {
             const delta = this.getWeightDelta(record, index);

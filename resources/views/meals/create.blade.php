@@ -175,7 +175,7 @@
                 <!-- Nutrition Info Card -->
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-6 mb-8 border border-gray-100">
                     <h3 class="font-bold text-gray-900 mb-4 font-heading">영양 성분 상세</h3>
-                    
+
                     <div v-if="inputMethod === 'manual'">
                          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
@@ -300,7 +300,7 @@ Vue.createApp({
 
             this.searching = true;
             try {
-                const response = await axios.get(`/foods?search=${this.searchQuery}&limit=10`);
+                const response = await axios.get(`/api/foods?search=${this.searchQuery}&limit=10`);
                 this.searchResults = response.data.data.data || [];
             } catch (error) {
                 console.error('Error searching foods:', error);
@@ -330,7 +330,7 @@ Vue.createApp({
         async saveMeal() {
             this.saving = true;
             try {
-                await axios.post('/daily-logs/meals', this.form);
+                await axios.post('/api/daily-logs/meals', this.form);
                 this.showToast('식사가 기록되었습니다.', 'success');
                 setTimeout(() => {
                     window.location.href = '{{ route("meals.index") }}';

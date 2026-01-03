@@ -50,7 +50,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div>
                         <div class="flex items-center gap-3 mb-2">
-                            <h2 class="text-2xl font-bold font-heading">@{{ dietPlan.name }}</h2>
+                            <h2 class="text-2xl font-bold font-heading">나의 식단 플랜</h2>
                             <span class="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-bold border border-white/10">
                                 @{{ getStatusLabel(dietPlan.status) }}
                             </span>
@@ -65,24 +65,24 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
                         <p class="text-xs text-primary-100 mb-1 font-medium">목표 칼로리</p>
-                        <p class="text-2xl font-bold">@{{ dietPlan.target_calories }}<span class="text-sm font-normal text-primary-200 ml-1">kcal</span></p>
+                        <p class="text-2xl font-bold">@{{ Math.round(dietPlan.target_calories_per_day) }}<span class="text-sm font-normal text-primary-200 ml-1">kcal</span></p>
                     </div>
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
                         <p class="text-xs text-primary-100 mb-1 font-medium">단백질</p>
-                        <p class="text-2xl font-bold">@{{ dietPlan.target_protein }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
+                        <p class="text-2xl font-bold">@{{ currentDayPlan ? Math.round(currentDayPlan.total_protein_g) : '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
                     </div>
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
                         <p class="text-xs text-primary-100 mb-1 font-medium">탄수화물</p>
-                        <p class="text-2xl font-bold">@{{ dietPlan.target_carbs }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
+                        <p class="text-2xl font-bold">@{{ currentDayPlan ? Math.round(currentDayPlan.total_carbs_g) : '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
                     </div>
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
                         <p class="text-xs text-primary-100 mb-1 font-medium">지방</p>
-                        <p class="text-2xl font-bold">@{{ dietPlan.target_fat }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
+                        <p class="text-2xl font-bold">@{{ currentDayPlan ? Math.round(currentDayPlan.total_fat_g) : '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
                     </div>
                 </div>
 
-                <p v-if="dietPlan.description" class="mt-6 text-sm text-primary-100 italic bg-black/10 p-4 rounded-xl border border-white/5">
-                    "@{{ dietPlan.description }}"
+                <p v-if="dietPlan.ai_summary" class="mt-6 text-sm text-primary-100 italic bg-black/10 p-4 rounded-xl border border-white/5">
+                    "@{{ dietPlan.ai_summary }}"
                 </p>
             </div>
         </div>
@@ -97,7 +97,7 @@
                         <button
                             v-for="day in availableDays"
                             :key="day.value"
-                            @click="selectedDay = day.value; loadDayMeals()"
+                            @click="selectedDay = day.value"
                             :class="['px-4 py-3 rounded-xl font-bold text-sm text-left transition-all whitespace-nowrap flex items-center justify-between group cursor-pointer', selectedDay === day.value ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900']"
                         >
                             <span>@{{ day.label }}</span>
@@ -109,6 +109,19 @@
 
             <!-- Meals List -->
             <div class="lg:col-span-9 space-y-6">
+                <!-- Daily Tips -->
+                <div v-if="currentDayPlan && currentDayPlan.tips" class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-amber-800 mb-1">오늘의 팁</h4>
+                            <p class="text-sm text-amber-700">@{{ currentDayPlan.tips }}</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div v-if="dayMeals && dayMeals.length > 0">
                     <meal-type-section
                         title="아침"
@@ -148,6 +161,40 @@
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-1">식단 정보가 없습니다</h3>
                     <p class="text-gray-500 text-sm">다른 날짜를 선택해보세요.</p>
+                </div>
+
+                <!-- Exercise Plan -->
+                <div v-if="currentDayExercises && currentDayExercises.length > 0" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        오늘의 운동 <span class="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-lg">@{{ currentDayExercises.length }}</span>
+                    </h3>
+
+                    <div class="space-y-3">
+                        <div v-for="exercise in currentDayExercises" :key="exercise.id" class="border border-gray-100 rounded-2xl p-4 hover:border-green-200 hover:bg-green-50/30 transition-all">
+                            <div class="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-gray-900 mb-2">@{{ exercise.exercise_name }}</h4>
+                                    <div class="flex flex-wrap gap-2 text-xs font-bold">
+                                        <span class="text-green-600 bg-green-50 px-2 py-1 rounded-md flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            @{{ exercise.duration_minutes }}분
+                                        </span>
+                                        <span class="text-orange-600 bg-orange-50 px-2 py-1 rounded-md flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+                                            @{{ Math.round(exercise.estimated_calories_burned) }} kcal
+                                        </span>
+                                        <span class="text-purple-600 bg-purple-50 px-2 py-1 rounded-md">
+                                            강도: @{{ exercise.intensity }}
+                                        </span>
+                                    </div>
+                                    <p v-if="exercise.notes" class="text-xs text-gray-500 mt-2 italic">"@{{ exercise.notes }}"</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -220,10 +267,10 @@
             <div v-if="selectedMeal" class="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100">
                 <h4 class="font-bold text-gray-900 mb-2">@{{ selectedMeal.food_name }}</h4>
                 <div class="flex flex-wrap gap-2 text-xs font-bold">
-                    <span class="text-gray-500">@{{ selectedMeal.calories }} kcal</span>
-                    <span class="text-blue-600">P @{{ selectedMeal.protein_g }}g</span>
-                    <span class="text-amber-600">C @{{ selectedMeal.carbs_g }}g</span>
-                    <span class="text-orange-600">F @{{ selectedMeal.fat_g }}g</span>
+                    <span class="text-gray-500">@{{ Math.round(selectedMeal.calories) }} kcal</span>
+                    <span class="text-blue-600">P @{{ Math.round(selectedMeal.protein_g) }}g</span>
+                    <span class="text-amber-600">C @{{ Math.round(selectedMeal.carbs_g) }}g</span>
+                    <span class="text-orange-600">F @{{ Math.round(selectedMeal.fat_g) }}g</span>
                 </div>
             </div>
 
@@ -285,14 +332,14 @@ const MealTypeSection = {
                 <div v-for="meal in meals" :key="meal.id" class="group border border-gray-100 rounded-2xl p-4 hover:border-primary-200 hover:bg-primary-50/30 transition-all flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                     <div class="flex-1">
                         <h4 class="font-bold text-gray-900 mb-1">@{{ meal.food_name }}</h4>
-                        <p v-if="meal.description" class="text-xs text-gray-500 italic mb-2">"@{{ meal.description }}"</p>
+                        <p v-if="meal.notes" class="text-xs text-gray-500 italic mb-2">"@{{ meal.notes }}"</p>
 
                         <div class="flex flex-wrap gap-2 text-xs font-bold">
-                            <span class="text-gray-900 bg-gray-100 px-2 py-1 rounded-md">@{{ meal.calories }} kcal</span>
-                            <span class="text-blue-600 bg-blue-50 px-2 py-1 rounded-md">P @{{ meal.protein_g }}g</span>
-                            <span class="text-amber-600 bg-amber-50 px-2 py-1 rounded-md">C @{{ meal.carbs_g }}g</span>
-                            <span class="text-orange-600 bg-orange-50 px-2 py-1 rounded-md">F @{{ meal.fat_g }}g</span>
-                            <span class="text-gray-500 border border-gray-200 px-2 py-1 rounded-md">@{{ meal.serving_size }} @{{ meal.serving_unit }}</span>
+                            <span class="text-gray-900 bg-gray-100 px-2 py-1 rounded-md">@{{ Math.round(meal.calories) }} kcal</span>
+                            <span class="text-blue-600 bg-blue-50 px-2 py-1 rounded-md">P @{{ Math.round(meal.protein_g) }}g</span>
+                            <span class="text-amber-600 bg-amber-50 px-2 py-1 rounded-md">C @{{ Math.round(meal.carbs_g) }}g</span>
+                            <span class="text-orange-600 bg-orange-50 px-2 py-1 rounded-md">F @{{ Math.round(meal.fat_g) }}g</span>
+                            <span class="text-gray-500 border border-gray-200 px-2 py-1 rounded-md">@{{ Math.round(meal.serving_size) }}g</span>
                         </div>
                     </div>
                     <button @click="$emit('useMeal', meal)" class="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer whitespace-nowrap">
@@ -309,7 +356,6 @@ Vue.createApp({
     data() {
         return {
             dietPlan: null,
-            dayMeals: [],
             selectedDay: 1,
             availableDays: [],
             loading: false,
@@ -331,6 +377,31 @@ Vue.createApp({
             }
         }
     },
+    computed: {
+        currentDayPlan() {
+            if (!this.dietPlan || !this.dietPlan.daily_meal_plans) return null;
+            return this.dietPlan.daily_meal_plans.find(plan => plan.day_number === this.selectedDay);
+        },
+        dayMeals() {
+            if (!this.currentDayPlan || !this.currentDayPlan.meals) return [];
+            const meals = this.currentDayPlan.meals;
+            // Flatten all meals into a single array with meal_type
+            const allMeals = [];
+            ['breakfast', 'lunch', 'dinner', 'snack'].forEach(type => {
+                if (meals[type]) {
+                    meals[type].forEach(meal => {
+                        allMeals.push({ ...meal, meal_type: type });
+                    });
+                }
+            });
+            return allMeals;
+        },
+        currentDayExercises() {
+            if (!this.dietPlan || !this.dietPlan.daily_exercise_plans) return [];
+            const dayPlan = this.dietPlan.daily_exercise_plans.find(plan => plan.day_number === this.selectedDay);
+            return dayPlan ? dayPlan.exercises : [];
+        }
+    },
     mounted() {
         this.loadDietPlan();
     },
@@ -338,43 +409,40 @@ Vue.createApp({
         async loadDietPlan() {
             this.loading = true;
             try {
-                const response = await axios.get('/diet-plans/active');
+                const response = await axios.get('/api/diet-plans/active');
                 if (response.data.data) {
                     this.dietPlan = response.data.data;
                     this.initializeDays();
-                    this.loadDayMeals();
                 }
             } catch (error) {
-                console.error('Failed to load diet plan:', error);
+                // 404 is expected when no active plan exists
+                if (error.response?.status !== 404) {
+                    console.error('Failed to load diet plan:', error);
+                }
             } finally {
                 this.loading = false;
             }
         },
         initializeDays() {
-            if (!this.dietPlan) return;
-            const start = new Date(this.dietPlan.start_date);
-            const end = new Date(this.dietPlan.end_date);
-            const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            this.availableDays = Array.from({ length: days }, (_, i) => ({ value: i + 1, label: `${i + 1}일차` }));
+            if (!this.dietPlan || !this.dietPlan.daily_meal_plans) return;
+            this.availableDays = this.dietPlan.daily_meal_plans.map(plan => ({
+                value: plan.day_number,
+                label: `${plan.day_number}일차`
+            }));
         },
-        async loadDayMeals() {
-            if (!this.dietPlan) return;
-            try {
-                const response = await axios.get(`/diet-plans/${this.dietPlan.id}/day/${this.selectedDay}`);
-                this.dayMeals = response.data.data || [];
-            } catch (error) {
-                console.error('Failed to load day meals:', error);
-                this.dayMeals = [];
-            }
+        loadDayMeals() {
+            // Now handled by computed property
         },
         getMealsByType(type) {
-            return this.dayMeals.filter(meal => meal.meal_type === type);
+            if (!this.currentDayPlan || !this.currentDayPlan.meals) return [];
+            const meals = this.currentDayPlan.meals[type] || [];
+            return meals.map(meal => ({ ...meal, meal_type: type }));
         },
         async generateDietPlan() {
             this.generating = true;
             this.errorMessage = '';
             try {
-                const response = await axios.post('/diet-plans/generate', this.generateForm);
+                const response = await axios.post('/api/diet-plans/generate', this.generateForm);
                 if (response.data.success) {
                     if (window.showToast) window.showToast('새 식단이 생성되었습니다!', 'success');
                     this.showGenerateModal = false;
@@ -400,16 +468,16 @@ Vue.createApp({
                 const payload = {
                     date: this.useMealForm.date,
                     meal_type: this.selectedMeal.meal_type,
-                    food_id: this.selectedMeal.food_id,
+                    food_id: this.selectedMeal.food_id || null,
                     food_name: this.selectedMeal.food_name,
-                    serving_size: this.selectedMeal.serving_size,
-                    calories: this.selectedMeal.calories,
-                    protein_g: this.selectedMeal.protein_g,
-                    carbs_g: this.selectedMeal.carbs_g,
-                    fat_g: this.selectedMeal.fat_g,
+                    serving_size: parseFloat(this.selectedMeal.serving_size),
+                    calories: parseFloat(this.selectedMeal.calories),
+                    protein_g: parseFloat(this.selectedMeal.protein_g),
+                    carbs_g: parseFloat(this.selectedMeal.carbs_g),
+                    fat_g: parseFloat(this.selectedMeal.fat_g),
                     meal_time: this.useMealForm.time || null
                 };
-                const response = await axios.post('/daily-logs/meals', payload);
+                const response = await axios.post('/api/daily-logs/meals', payload);
                 if (response.data.success) {
                     if (window.showToast) window.showToast('식단이 적용되었습니다!', 'success');
                     this.showUseMealModal = false;

@@ -60,7 +60,7 @@
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-500 mb-1">총 운동 시간</p>
                     <div class="flex items-baseline">
-                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ summary.total_duration || 0 }}</span>
+                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ summary.total_duration_minutes || 0 }}</span>
                         <span class="ml-1 text-sm text-gray-500">분</span>
                     </div>
                 </div>
@@ -74,7 +74,7 @@
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-500 mb-1">소모 칼로리</p>
                     <div class="flex items-baseline">
-                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ summary.total_calories || 0 }}</span>
+                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ summary.total_calories_burned || 0 }}</span>
                         <span class="ml-1 text-sm text-gray-500">kcal</span>
                     </div>
                 </div>
@@ -88,7 +88,7 @@
                 <div class="relative z-10">
                     <p class="text-sm font-medium text-gray-500 mb-1">운동 횟수</p>
                     <div class="flex items-baseline">
-                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ summary.total_count || 0 }}</span>
+                        <span class="text-3xl font-bold text-gray-900 font-heading">@{{ summary.exercise_count || 0 }}</span>
                         <span class="ml-1 text-sm text-gray-500">회</span>
                     </div>
                 </div>
@@ -215,10 +215,10 @@ Vue.createApp({
         async loadExercises() {
             this.loading = true;
             try {
-                const exercisesResponse = await axios.get(`/daily-logs/exercises?date=${this.selectedDate}`);
-                this.exercises = exercisesResponse.data.data || [];
+                const exercisesResponse = await axios.get(`/api/daily-logs/exercises?date=${this.selectedDate}`);
+                this.exercises = exercisesResponse.data.data.exercises || [];
 
-                const summaryResponse = await axios.get(`/daily-logs/exercises/summary?date=${this.selectedDate}`);
+                const summaryResponse = await axios.get(`/api/daily-logs/exercises/summary?date=${this.selectedDate}`);
                 this.summary = summaryResponse.data.data || { total_duration: 0, total_calories: 0, total_count: 0 };
             } catch (error) {
                 console.error('Failed to load exercises:', error);
@@ -249,7 +249,7 @@ Vue.createApp({
 
             this.deleting = true;
             try {
-                await axios.delete(`/daily-logs/exercises/${this.exerciseToDelete.id}`);
+                await axios.delete(`/api/daily-logs/exercises/${this.exerciseToDelete.id}`);
                 if (window.showToast) window.showToast('운동 기록이 삭제되었습니다.', 'success');
 
                 this.showDeleteModal = false;

@@ -14,9 +14,6 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Heroicons -->
-    <script src="https://unpkg.com/@heroicons/vue@2.0.18/dist/cjs/index.js" defer></script>
-
     <!-- Custom Tailwind Config -->
     <script>
         tailwind.config = {
@@ -244,17 +241,16 @@
 
     <!-- Global Scripts -->
     <script>
-        // Axios setup
-        axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-        axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').content;
-        axios.defaults.baseURL = '/api';
+        {{--// Axios setup--}}
+        {{--axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';--}}
+        {{--axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').content;--}}
 
-        @auth
-        const token = localStorage.getItem('auth_token') || '{{ session("auth_token") }}';
-        if (token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        }
-        @endauth
+        {{--@auth--}}
+        {{--const token = localStorage.getItem('auth_token') || '{{ session("auth_token") }}';--}}
+        {{--if (token) {--}}
+        {{--    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;--}}
+        {{--}--}}
+        {{--@endauth--}}
 
         // Toast function
         function showToast(message, type = 'success') {

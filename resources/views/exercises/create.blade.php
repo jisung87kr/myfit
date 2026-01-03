@@ -345,7 +345,7 @@ Vue.createApp({
 
             this.searching = true;
             try {
-                const response = await axios.get(`/exercises?search=${encodeURIComponent(this.searchQuery)}`);
+                const response = await axios.get(`/api/exercises?search=${encodeURIComponent(this.searchQuery)}`);
                 this.searchResults = response.data.data || [];
             } catch (error) {
                 console.error('Search failed:', error);
@@ -374,7 +374,7 @@ Vue.createApp({
         },
         async loadExercise(id) {
             try {
-                const response = await axios.get(`/daily-logs/exercises/${id}`);
+                const response = await axios.get(`/api/daily-logs/exercises/${id}`);
                 const exercise = response.data.data;
 
                 this.form = {
@@ -408,8 +408,8 @@ Vue.createApp({
 
             try {
                 const url = this.isEditMode
-                    ? `/daily-logs/exercises/${new URLSearchParams(window.location.search).get('id')}`
-                    : '/daily-logs/exercises';
+                    ? `/api/daily-logs/exercises/${new URLSearchParams(window.location.search).get('id')}`
+                    : '/api/daily-logs/exercises';
 
                 const method = this.isEditMode ? 'put' : 'post';
 
