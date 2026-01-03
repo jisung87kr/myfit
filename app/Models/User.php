@@ -109,4 +109,80 @@ class User extends Authenticatable
             NotificationSetting::getDefaults()
         );
     }
+
+    /**
+     * Get the user's posts.
+     */
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    /**
+     * Get the user's comments.
+     */
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Get the user's likes.
+     */
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    /**
+     * Get challenges the user is participating in.
+     */
+    public function challengeParticipations()
+    {
+        return $this->hasMany(ChallengeParticipant::class);
+    }
+
+    /**
+     * Get the user's friends (sent requests that were accepted).
+     */
+    public function sentFriendRequests()
+    {
+        return $this->hasMany(Friendship::class, 'user_id');
+    }
+
+    /**
+     * Get friend requests received by the user.
+     */
+    public function receivedFriendRequests()
+    {
+        return $this->hasMany(Friendship::class, 'friend_id');
+    }
+
+    /**
+     * Get all friends (both directions, accepted only).
+     */
+    public function friends()
+    {
+        $sentFriends = $this->sentFriendRequests()
+            ->where('status', 'accepted')
+            ->pluck('friend_id');
+
+        $receivedFriends = $this->receivedFriendRequests()
+            ->where('status', 'accepted')
+            ->pluck('user_id');
+
+        return User::whereIn('id', $sentFriends->merge($receivedFriends));
+    }
+
+    /**
+     * Check if user is friends with another user.
+     */
+    public function isFriendsWith(User $user): bool
+    {
+        return Friendship::where(function ($query) use ($user) {
+            $query->where('user_id', $this->id)->where('friend_id', $user->id);
+        })->orWhere(function ($query) use ($user) {
+            $query->where('user_id', $user->id)->where('friend_id', $this->id);
+        })->where('status', 'accepted')->exists();
+    }
 }

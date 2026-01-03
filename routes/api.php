@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\WeightLogController;
+use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\ChallengeController;
+use App\Http\Controllers\Api\FriendshipController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -177,6 +181,58 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/', [NotificationSettingController::class, 'update']);
         Route::post('/reset', [NotificationSettingController::class, 'reset']);
         Route::post('/toggle', [NotificationSettingController::class, 'toggle']);
+    });
+
+    // Community - Posts
+    Route::prefix('posts')->group(function () {
+        Route::get('/', [PostController::class, 'index']);
+        Route::post('/', [PostController::class, 'store']);
+        Route::get('/categories', [PostController::class, 'categories']);
+        Route::get('/my', [PostController::class, 'myPosts']);
+        Route::get('/{post}', [PostController::class, 'show']);
+        Route::put('/{post}', [PostController::class, 'update']);
+        Route::delete('/{post}', [PostController::class, 'destroy']);
+        Route::post('/{post}/like', [PostController::class, 'like']);
+        Route::delete('/{post}/like', [PostController::class, 'unlike']);
+
+        // Comments
+        Route::get('/{post}/comments', [CommentController::class, 'index']);
+        Route::post('/{post}/comments', [CommentController::class, 'store']);
+    });
+
+    // Comments
+    Route::prefix('comments')->group(function () {
+        Route::put('/{comment}', [CommentController::class, 'update']);
+        Route::delete('/{comment}', [CommentController::class, 'destroy']);
+        Route::post('/{comment}/like', [CommentController::class, 'like']);
+        Route::delete('/{comment}/like', [CommentController::class, 'unlike']);
+    });
+
+    // Challenges
+    Route::prefix('challenges')->group(function () {
+        Route::get('/', [ChallengeController::class, 'index']);
+        Route::get('/my', [ChallengeController::class, 'myChallenges']);
+        Route::get('/{challenge}', [ChallengeController::class, 'show']);
+        Route::post('/{challenge}/join', [ChallengeController::class, 'join']);
+        Route::post('/{challenge}/leave', [ChallengeController::class, 'leave']);
+        Route::post('/{challenge}/update-progress', [ChallengeController::class, 'updateProgress']);
+        Route::get('/{challenge}/leaderboard', [ChallengeController::class, 'leaderboard']);
+    });
+
+    // Friends
+    Route::prefix('friends')->group(function () {
+        Route::get('/', [FriendshipController::class, 'index']);
+        Route::get('/pending', [FriendshipController::class, 'pendingRequests']);
+        Route::get('/sent', [FriendshipController::class, 'sentRequests']);
+        Route::post('/request', [FriendshipController::class, 'sendRequest']);
+        Route::post('/{friendship}/accept', [FriendshipController::class, 'acceptRequest']);
+        Route::post('/{friendship}/reject', [FriendshipController::class, 'rejectRequest']);
+        Route::delete('/{friendship}/cancel', [FriendshipController::class, 'cancelRequest']);
+        Route::delete('/{friend}', [FriendshipController::class, 'removeFriend']);
+        Route::post('/{user}/block', [FriendshipController::class, 'blockUser']);
+        Route::delete('/{user}/block', [FriendshipController::class, 'unblockUser']);
+        Route::get('/{friend}/progress', [FriendshipController::class, 'friendProgress']);
+        Route::get('/search', [FriendshipController::class, 'searchUsers']);
     });
 });
 
