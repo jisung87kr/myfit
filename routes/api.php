@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CalculationController;
+use App\Http\Controllers\Api\NotificationSettingController;
 use App\Http\Controllers\Api\DailyDashboardController;
 use App\Http\Controllers\Api\DietPlanController;
 use App\Http\Controllers\Api\ExerciseController;
@@ -168,6 +169,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/categories', [BadgeController::class, 'categories']);
         Route::post('/check', [BadgeController::class, 'check']);
         Route::get('/{badge}', [BadgeController::class, 'show']);
+    });
+
+    // Notification Settings
+    Route::prefix('notifications/settings')->group(function () {
+        Route::get('/', [NotificationSettingController::class, 'show']);
+        Route::put('/', [NotificationSettingController::class, 'update']);
+        Route::post('/reset', [NotificationSettingController::class, 'reset']);
+        Route::post('/toggle', [NotificationSettingController::class, 'toggle']);
     });
 });
 

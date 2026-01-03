@@ -91,4 +91,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserBadge::class);
     }
+
+    /**
+     * Get the user's notification settings.
+     */
+    public function notificationSettings()
+    {
+        return $this->hasOne(NotificationSetting::class);
+    }
+
+    /**
+     * Get or create notification settings.
+     */
+    public function getNotificationSettings(): NotificationSetting
+    {
+        return $this->notificationSettings ?? $this->notificationSettings()->create(
+            NotificationSetting::getDefaults()
+        );
+    }
 }
