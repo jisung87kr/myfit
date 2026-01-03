@@ -211,9 +211,7 @@
 
 @push('scripts')
 <script>
-const { createApp } = Vue;
-
-createApp({
+Vue.createApp({
     data() {
         return {
             weekOffset: 0,

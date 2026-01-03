@@ -172,7 +172,6 @@
 
 @push('scripts')
 <script>
-const { createApp } = Vue;
 
 // Meal Type Section Component
 const MealTypeSection = {
@@ -234,7 +233,7 @@ const MealTypeSection = {
     }
 };
 
-createApp({
+Vue.createApp({
     components: {
         'meal-type-section': MealTypeSection
     },

@@ -166,9 +166,7 @@
 
 @push('scripts')
 <script>
-const { createApp } = Vue;
-
-createApp({
+Vue.createApp({
     data() {
         return {
             selectedDate: new Date().toISOString().split('T')[0],
