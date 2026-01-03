@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TokenType;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthService
@@ -22,6 +23,9 @@ class AuthService
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+
+        // Create session for web routes
+        Auth::login($user);
 
         $token = $user->createToken(TokenType::AUTH->value)->plainTextToken;
 
@@ -51,6 +55,9 @@ class AuthService
         if (!$user || !Hash::check($password, $user->password)) {
             throw new AuthenticationException('이메일 또는 비밀번호가 올바르지 않습니다.');
         }
+
+        // Create session for web routes
+        Auth::login($user);
 
         // Revoke all existing tokens
         $user->tokens()->delete();
