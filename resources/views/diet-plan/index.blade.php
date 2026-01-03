@@ -102,7 +102,7 @@
                     title="아침"
                     icon="fa-mug-hot"
                     :meals="getMealsByType('breakfast')"
-                    @use-meal="useMeal"
+                    v-on:use-meal="useMeal"
                 ></meal-type-section>
 
                 <!-- Lunch -->
@@ -110,7 +110,7 @@
                     title="점심"
                     icon="fa-sun"
                     :meals="getMealsByType('lunch')"
-                    @use-meal="useMeal"
+                    v-on:use-meal="useMeal"
                 ></meal-type-section>
 
                 <!-- Dinner -->
@@ -118,7 +118,7 @@
                     title="저녁"
                     icon="fa-moon"
                     :meals="getMealsByType('dinner')"
-                    @use-meal="useMeal"
+                    v-on:use-meal="useMeal"
                 ></meal-type-section>
 
                 <!-- Snack -->
@@ -126,7 +126,7 @@
                     title="간식"
                     icon="fa-cookie"
                     :meals="getMealsByType('snack')"
-                    @use-meal="useMeal"
+                    v-on:use-meal="useMeal"
                 ></meal-type-section>
             </div>
 
