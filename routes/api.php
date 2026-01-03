@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ChallengeController;
 use App\Http\Controllers\Api\FriendshipController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\Admin\FoodController as AdminFoodController;
@@ -185,6 +186,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/', [NotificationSettingController::class, 'update']);
         Route::post('/reset', [NotificationSettingController::class, 'reset']);
         Route::post('/toggle', [NotificationSettingController::class, 'toggle']);
+    });
+
+    // Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::put('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/read', [NotificationController::class, 'deleteRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
     });
 
     // Community - Posts
