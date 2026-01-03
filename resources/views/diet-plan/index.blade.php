@@ -356,7 +356,7 @@ Vue.createApp({
         async loadDietPlan() {
             this.loading = true;
             try {
-                const response = await axios.get('/diet-plan/active');
+                const response = await axios.get('/diet-plans/active');
                 if (response.data.data) {
                     this.dietPlan = response.data.data;
                     this.initializeDays();
@@ -389,7 +389,7 @@ Vue.createApp({
             if (!this.dietPlan) return;
 
             try {
-                const response = await axios.get(`/diet-plan/${this.dietPlan.id}/meals?day=${this.selectedDay}`);
+                const response = await axios.get(`/diet-plans/${this.dietPlan.id}/day/${this.selectedDay}`);
                 this.dayMeals = response.data.data || [];
             } catch (error) {
                 console.error('Failed to load day meals:', error);
@@ -404,7 +404,7 @@ Vue.createApp({
             this.errorMessage = '';
 
             try {
-                const response = await axios.post('/diet-plan/generate', this.generateForm);
+                const response = await axios.post('/diet-plans/generate', this.generateForm);
 
                 if (response.data.success) {
                     window.dispatchEvent(new CustomEvent('show-toast', {
