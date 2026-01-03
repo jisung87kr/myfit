@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\CalculationController;
 use App\Http\Controllers\Api\DailyDashboardController;
 use App\Http\Controllers\Api\DietPlanController;
@@ -155,7 +156,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/show', [DailyDashboardController::class, 'show']);
         Route::get('/today', [DailyDashboardController::class, 'today']);
         Route::get('/weekly-summary', [DailyDashboardController::class, 'weeklySummary']);
+        Route::get('/monthly-summary', [DailyDashboardController::class, 'monthlySummary']);
         Route::get('/quick-stats', [DailyDashboardController::class, 'quickStats']);
+        Route::get('/streaks', [DailyDashboardController::class, 'streaks']);
+    });
+
+    // Badges
+    Route::prefix('badges')->group(function () {
+        Route::get('/', [BadgeController::class, 'index']);
+        Route::get('/earned', [BadgeController::class, 'earned']);
+        Route::get('/categories', [BadgeController::class, 'categories']);
+        Route::post('/check', [BadgeController::class, 'check']);
+        Route::get('/{badge}', [BadgeController::class, 'show']);
     });
 });
 

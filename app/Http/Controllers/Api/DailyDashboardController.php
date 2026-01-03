@@ -286,30 +286,233 @@ class DailyDashboardController extends Controller
     }
 
     /**
+     * Get monthly summary
+     */
+    public function monthlySummary(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'year' => 'nullable|integer|min:2020|max:2100',
+            'month' => 'nullable|integer|min:1|max:12',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->error('Validation failed', $validator->errors(), 422);
+        }
+
+        $year = $request->year ?? now()->year;
+        $month = $request->month ?? now()->month;
+
+        $startDate = now()->setDate($year, $month, 1)->startOfMonth()->format('Y-m-d');
+        $endDate = now()->setDate($year, $month, 1)->endOfMonth()->format('Y-m-d');
+        $daysInMonth = now()->setDate($year, $month, 1)->daysInMonth;
+
+        $user = auth()->user();
+
+        // Get data for the month
+        $meals = MealLog::forUser($user->id)->betweenDates($startDate, $endDate)->get();
+        $exercises = ExerciseLog::forUser($user->id)->betweenDates($startDate, $endDate)->get();
+        $weights = WeightLog::forUser($user->id)->betweenDates($startDate, $endDate)->orderBy('date', 'asc')->get();
+
+        // Calculate days with logs
+        $daysWithMeals = $meals->groupBy(fn($m) => $m->date->format('Y-m-d'))->count();
+        $daysWithExercises = $exercises->groupBy(fn($e) => $e->date->format('Y-m-d'))->count();
+        $daysWithWeights = $weights->groupBy(fn($w) => $w->date->format('Y-m-d'))->count();
+
+        $monthlySummary = [
+            'period' => [
+                'year' => $year,
+                'month' => $month,
+                'month_name' => now()->setDate($year, $month, 1)->format('F'),
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'days_in_month' => $daysInMonth,
+            ],
+            'nutrition' => [
+                'total_calories' => round($meals->sum('calories'), 2),
+                'total_protein_g' => round($meals->sum('protein_g'), 2),
+                'total_carbs_g' => round($meals->sum('carbs_g'), 2),
+                'total_fat_g' => round($meals->sum('fat_g'), 2),
+                'daily_average_calories' => $daysWithMeals > 0
+                    ? round($meals->sum('calories') / $daysWithMeals, 2)
+                    : 0,
+                'meal_count' => $meals->count(),
+                'days_logged' => $daysWithMeals,
+                'logging_rate' => round(($daysWithMeals / $daysInMonth) * 100, 1),
+            ],
+            'exercise' => [
+                'total_calories_burned' => round($exercises->sum('calories_burned'), 2),
+                'total_duration_minutes' => $exercises->sum('duration_minutes'),
+                'daily_average_calories_burned' => $daysWithExercises > 0
+                    ? round($exercises->sum('calories_burned') / $daysWithExercises, 2)
+                    : 0,
+                'exercise_count' => $exercises->count(),
+                'days_logged' => $daysWithExercises,
+                'logging_rate' => round(($daysWithExercises / $daysInMonth) * 100, 1),
+            ],
+            'weight' => [
+                'entry_count' => $weights->count(),
+                'start_weight' => $weights->first()?->weight,
+                'end_weight' => $weights->last()?->weight,
+                'min_weight' => $weights->min('weight'),
+                'max_weight' => $weights->max('weight'),
+                'avg_weight' => $weights->count() > 0 ? round($weights->avg('weight'), 2) : null,
+                'weight_change' => $weights->count() >= 2
+                    ? round($weights->last()->weight - $weights->first()->weight, 2)
+                    : 0,
+                'days_logged' => $daysWithWeights,
+                'logging_rate' => round(($daysWithWeights / $daysInMonth) * 100, 1),
+            ],
+            'streaks' => $this->getStreakStats($user->id),
+        ];
+
+        // Weekly breakdown within the month
+        $weeklyBreakdown = [];
+        $currentDate = now()->parse($startDate)->startOfWeek();
+
+        while ($currentDate->format('Y-m-d') <= $endDate) {
+            $weekStart = max($currentDate->format('Y-m-d'), $startDate);
+            $weekEnd = min($currentDate->copy()->endOfWeek()->format('Y-m-d'), $endDate);
+
+            $weekMeals = $meals->filter(fn($m) => $m->date->format('Y-m-d') >= $weekStart && $m->date->format('Y-m-d') <= $weekEnd);
+            $weekExercises = $exercises->filter(fn($e) => $e->date->format('Y-m-d') >= $weekStart && $e->date->format('Y-m-d') <= $weekEnd);
+
+            $weeklyBreakdown[] = [
+                'week_start' => $weekStart,
+                'week_end' => $weekEnd,
+                'calories_consumed' => round($weekMeals->sum('calories'), 2),
+                'calories_burned' => round($weekExercises->sum('calories_burned'), 2),
+                'net_calories' => round($weekMeals->sum('calories') - $weekExercises->sum('calories_burned'), 2),
+                'meal_count' => $weekMeals->count(),
+                'exercise_count' => $weekExercises->count(),
+            ];
+
+            $currentDate->addWeek();
+        }
+
+        $monthlySummary['weekly_breakdown'] = $weeklyBreakdown;
+
+        return response()->success('Monthly summary retrieved successfully', $monthlySummary);
+    }
+
+    /**
+     * Get all streak statistics
+     */
+    public function streaks(): JsonResponse
+    {
+        $user = auth()->user();
+        $stats = $this->getStreakStats($user->id);
+
+        return response()->success('Streak statistics retrieved successfully', $stats);
+    }
+
+    /**
+     * Get streak statistics for a user
+     */
+    private function getStreakStats(int $userId): array
+    {
+        return [
+            'meal_logging' => [
+                'current' => $this->calculateMealLoggingStreak($userId),
+                'longest' => $this->calculateLongestStreak($userId, 'meals'),
+            ],
+            'exercise_logging' => [
+                'current' => $this->calculateExerciseLoggingStreak($userId),
+                'longest' => $this->calculateLongestStreak($userId, 'exercises'),
+            ],
+            'weight_logging' => [
+                'current' => $this->calculateWeightLoggingStreak($userId),
+                'longest' => $this->calculateLongestStreak($userId, 'weights'),
+            ],
+        ];
+    }
+
+    /**
      * Calculate meal logging streak
      */
     private function calculateMealLoggingStreak(int $userId): int
+    {
+        return $this->calculateCurrentStreak($userId, 'meals');
+    }
+
+    /**
+     * Calculate exercise logging streak
+     */
+    private function calculateExerciseLoggingStreak(int $userId): int
+    {
+        return $this->calculateCurrentStreak($userId, 'exercises');
+    }
+
+    /**
+     * Calculate weight logging streak
+     */
+    private function calculateWeightLoggingStreak(int $userId): int
+    {
+        return $this->calculateCurrentStreak($userId, 'weights');
+    }
+
+    /**
+     * Calculate current streak for a specific type
+     */
+    private function calculateCurrentStreak(int $userId, string $type): int
     {
         $streak = 0;
         $currentDate = now();
 
         while (true) {
             $date = $currentDate->format('Y-m-d');
-            $hasMeals = MealLog::forUser($userId)->forDate($date)->exists();
+            $hasEntry = match ($type) {
+                'meals' => MealLog::forUser($userId)->forDate($date)->exists(),
+                'exercises' => ExerciseLog::forUser($userId)->forDate($date)->exists(),
+                'weights' => WeightLog::forUser($userId)->forDate($date)->exists(),
+                default => false,
+            };
 
-            if (!$hasMeals) {
+            if (!$hasEntry) {
                 break;
             }
 
             $streak++;
             $currentDate->subDay();
 
-            // Limit to 365 days to prevent infinite loop
             if ($streak >= 365) {
                 break;
             }
         }
 
         return $streak;
+    }
+
+    /**
+     * Calculate longest streak for a specific type
+     */
+    private function calculateLongestStreak(int $userId, string $type): int
+    {
+        $dates = match ($type) {
+            'meals' => MealLog::forUser($userId)->distinct('date')->pluck('date')->map(fn($d) => $d->format('Y-m-d'))->sort()->values(),
+            'exercises' => ExerciseLog::forUser($userId)->distinct('date')->pluck('date')->map(fn($d) => $d->format('Y-m-d'))->sort()->values(),
+            'weights' => WeightLog::forUser($userId)->distinct('date')->pluck('date')->map(fn($d) => $d->format('Y-m-d'))->sort()->values(),
+            default => collect(),
+        };
+
+        if ($dates->isEmpty()) {
+            return 0;
+        }
+
+        $longestStreak = 1;
+        $currentStreak = 1;
+
+        for ($i = 1; $i < $dates->count(); $i++) {
+            $prevDate = now()->parse($dates[$i - 1]);
+            $currDate = now()->parse($dates[$i]);
+
+            if ($prevDate->diffInDays($currDate) === 1) {
+                $currentStreak++;
+                $longestStreak = max($longestStreak, $currentStreak);
+            } else {
+                $currentStreak = 1;
+            }
+        }
+
+        return $longestStreak;
     }
 }

@@ -65,4 +65,30 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserSurveyResponse::class);
     }
+
+    /**
+     * Get the user's calculations.
+     */
+    public function calculations()
+    {
+        return $this->hasMany(UserCalculation::class);
+    }
+
+    /**
+     * Get the user's badges.
+     */
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class, 'user_badges')
+            ->withPivot(['earned_at', 'progress_value'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the user's earned badges.
+     */
+    public function earnedBadges()
+    {
+        return $this->hasMany(UserBadge::class);
+    }
 }
