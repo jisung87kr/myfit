@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Food extends Model
 {
     use HasFactory;
+
+    protected $table = 'foods';
+
     protected $fillable = [
         'name',
         'name_en',
@@ -47,5 +50,21 @@ class Food extends Model
     {
         return $query->where('name', 'like', "%{$search}%")
             ->orWhere('name_en', 'like', "%{$search}%");
+    }
+
+    /**
+     * Get meal logs using this food
+     */
+    public function mealLogs()
+    {
+        return $this->hasMany(\App\Models\MealLog::class);
+    }
+
+    /**
+     * Get meal plan items using this food
+     */
+    public function mealPlanItems()
+    {
+        return $this->hasMany(\App\Models\MealPlanItem::class);
     }
 }

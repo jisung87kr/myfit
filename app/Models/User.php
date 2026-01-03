@@ -27,6 +27,8 @@ class User extends Authenticatable
         'profile_photo_path',
         'weight',
         'height',
+        'disabled_at',
+        'disabled_reason',
     ];
 
     /**
@@ -186,5 +188,29 @@ class User extends Authenticatable
         })->orWhere(function ($query) use ($user) {
             $query->where('user_id', $user->id)->where('friend_id', $this->id);
         })->where('status', 'accepted')->exists();
+    }
+
+    /**
+     * Get the user's meal logs.
+     */
+    public function mealLogs()
+    {
+        return $this->hasMany(MealLog::class);
+    }
+
+    /**
+     * Get the user's exercise logs.
+     */
+    public function exerciseLogs()
+    {
+        return $this->hasMany(ExerciseLog::class);
+    }
+
+    /**
+     * Get the user's weight logs.
+     */
+    public function weightLogs()
+    {
+        return $this->hasMany(WeightLog::class);
     }
 }

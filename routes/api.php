@@ -19,6 +19,10 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ChallengeController;
 use App\Http\Controllers\Api\FriendshipController;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\Admin\FoodController as AdminFoodController;
+use App\Http\Controllers\Api\Admin\ExerciseController as AdminExerciseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -233,6 +237,44 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{user}/block', [FriendshipController::class, 'unblockUser']);
         Route::get('/{friend}/progress', [FriendshipController::class, 'friendProgress']);
         Route::get('/search', [FriendshipController::class, 'searchUsers']);
+    });
+
+    // Admin Routes (requires admin role)
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        // Dashboard & Statistics
+        Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+        Route::get('/stats/users', [AdminDashboardController::class, 'userStats']);
+        Route::get('/stats/activity', [AdminDashboardController::class, 'activityStats']);
+
+        // User Management
+        Route::prefix('users')->group(function () {
+            Route::get('/', [AdminUserController::class, 'index']);
+            Route::get('/{user}', [AdminUserController::class, 'show']);
+            Route::put('/{user}/status', [AdminUserController::class, 'updateStatus']);
+            Route::get('/{user}/activity', [AdminUserController::class, 'activity']);
+            Route::post('/{user}/roles', [AdminUserController::class, 'assignRole']);
+            Route::delete('/{user}/roles/{role}', [AdminUserController::class, 'removeRole']);
+        });
+
+        // Food Management
+        Route::prefix('foods')->group(function () {
+            Route::get('/', [AdminFoodController::class, 'index']);
+            Route::post('/', [AdminFoodController::class, 'store']);
+            Route::get('/{food}', [AdminFoodController::class, 'show']);
+            Route::put('/{food}', [AdminFoodController::class, 'update']);
+            Route::delete('/{food}', [AdminFoodController::class, 'destroy']);
+            Route::post('/bulk-import', [AdminFoodController::class, 'bulkImport']);
+        });
+
+        // Exercise Management
+        Route::prefix('exercises')->group(function () {
+            Route::get('/', [AdminExerciseController::class, 'index']);
+            Route::post('/', [AdminExerciseController::class, 'store']);
+            Route::get('/{exercise}', [AdminExerciseController::class, 'show']);
+            Route::put('/{exercise}', [AdminExerciseController::class, 'update']);
+            Route::delete('/{exercise}', [AdminExerciseController::class, 'destroy']);
+            Route::post('/bulk-import', [AdminExerciseController::class, 'bulkImport']);
+        });
     });
 });
 

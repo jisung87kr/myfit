@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Exercise extends Model
 {
     use HasFactory;
+
+    protected $table = 'exercises';
+
     protected $fillable = [
         'name',
         'category',
@@ -53,5 +56,21 @@ class Exercise extends Model
     public function calculateCalories(float $weightKg, float $hours): float
     {
         return round($this->calories_per_hour_per_kg * $weightKg * $hours, 2);
+    }
+
+    /**
+     * Get exercise logs using this exercise
+     */
+    public function exerciseLogs()
+    {
+        return $this->hasMany(\App\Models\ExerciseLog::class);
+    }
+
+    /**
+     * Get daily exercise plans using this exercise
+     */
+    public function dailyExercisePlans()
+    {
+        return $this->hasMany(\App\Models\DailyExercisePlan::class);
     }
 }
