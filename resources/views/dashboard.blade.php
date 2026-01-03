@@ -310,7 +310,7 @@
                     <i class="fas fa-plus-circle text-3xl text-primary mb-2"></i>
                     <span class="text-sm font-medium text-gray-700">운동 추가</span>
                 </a>
-                <a href="{{ route('weight.create') }}" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors">
+                <a href="{{ route('weight.index') }}" class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-colors">
                     <i class="fas fa-plus-circle text-3xl text-primary mb-2"></i>
                     <span class="text-sm font-medium text-gray-700">체중 기록</span>
                 </a>
