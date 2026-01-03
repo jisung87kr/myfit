@@ -3,343 +3,291 @@
 @section('title', '운동 추가 - MyFit')
 
 @section('content')
-<div class="container mx-auto px-4 py-6 max-w-4xl">
-    <div id="exercise-form-app">
-        <!-- Header -->
-        <div class="mb-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">
-                        <i class="fas fa-running text-primary mr-2"></i>@{{ isEditMode ? '운동 수정' : '운동 추가' }}
-                    </h1>
-                    <p class="text-sm text-gray-600 mt-1">오늘의 운동을 기록하세요</p>
-                </div>
-                <a href="{{ route('exercises.index') }}" class="text-gray-600 hover:text-gray-900">
-                    <i class="fas fa-times text-2xl"></i>
-                </a>
-            </div>
-        </div>
+<div id="exercise-form-app" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <header class="flex items-center space-x-4 mb-8 animate-fade-in-up">
+        <a href="{{ route('exercises.index') }}" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900 font-heading">
+            @{{ isEditMode ? '운동 수정' : '운동 추가' }}
+        </h1>
+    </header>
 
-        <!-- Input Method Selector -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">입력 방식 선택</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <!-- Left Column: Method & Search -->
+        <div class="lg:col-span-4 space-y-6">
+            <!-- Method Selector -->
+            <div class="bg-white rounded-3xl p-2 shadow-sm border border-gray-100 flex p-1.5">
                 <button
                     @click="inputMethod = 'search'"
-                    :class="['p-4 rounded-lg border-2 transition-all', inputMethod === 'search' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300']"
+                    :class="inputMethod === 'search' ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'"
+                    class="flex-1 py-3 px-4 rounded-2xl text-sm font-bold transition-all duration-200 flex flex-col items-center gap-1 cursor-pointer"
                 >
-                    <i :class="['fas fa-search text-2xl mb-2', inputMethod === 'search' ? 'text-primary' : 'text-gray-400']"></i>
-                    <p :class="['font-semibold', inputMethod === 'search' ? 'text-primary' : 'text-gray-700']">운동 검색</p>
-                    <p class="text-xs text-gray-600 mt-1">데이터베이스에서 검색</p>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    검색
                 </button>
                 <button
                     @click="inputMethod = 'manual'"
-                    :class="['p-4 rounded-lg border-2 transition-all', inputMethod === 'manual' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300']"
+                    :class="inputMethod === 'manual' ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'"
+                    class="flex-1 py-3 px-4 rounded-2xl text-sm font-bold transition-all duration-200 flex flex-col items-center gap-1 cursor-pointer"
                 >
-                    <i :class="['fas fa-keyboard text-2xl mb-2', inputMethod === 'manual' ? 'text-primary' : 'text-gray-400']"></i>
-                    <p :class="['font-semibold', inputMethod === 'manual' ? 'text-primary' : 'text-gray-700']">직접 입력</p>
-                    <p class="text-xs text-gray-600 mt-1">모든 정보 수동 입력</p>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    직접 입력
                 </button>
             </div>
-        </div>
 
-        <!-- Exercise Search (Search Method) -->
-        <div v-if="inputMethod === 'search'" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">운동 검색</h2>
-
-            <div class="relative mb-4">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
+            <!-- Search Box -->
+            <div v-if="inputMethod === 'search'" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-900 mb-4 font-heading">운동 검색</h3>
+                <div class="relative mb-4">
+                    <input
+                        type="text"
+                        v-model="searchQuery"
+                        @input="searchExercises"
+                        placeholder="예: 런닝, 요가"
+                        class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 transition-all"
+                    >
+                    <svg class="w-5 h-5 text-gray-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
-                <input
-                    type="text"
-                    v-model="searchQuery"
-                    @input="searchExercises"
-                    placeholder="운동 이름을 입력하세요 (예: 런닝, 벤치프레스, 요가)"
-                    class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                >
-            </div>
 
-            <!-- Search Results -->
-            <div v-if="searchResults.length > 0" class="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
-                <div
-                    v-for="exercise in searchResults"
-                    :key="exercise.id"
-                    @click="selectExercise(exercise)"
-                    class="p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                >
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm" :class="getExerciseTypeClass(exercise.exercise_type)">
-                                    <i :class="getExerciseIcon(exercise.exercise_type)"></i>
-                                </span>
-                                <h3 class="font-semibold text-gray-900">@{{ exercise.name }}</h3>
+                <!-- Results -->
+                <div v-if="searchResults.length > 0" class="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div
+                        v-for="exercise in searchResults"
+                        :key="exercise.id"
+                        @click="selectExercise(exercise)"
+                        class="p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50/50 cursor-pointer transition-all group"
+                    >
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold text-gray-900 group-hover:text-primary-700 transition-colors">@{{ exercise.name }}</h4>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    @{{ getExerciseTypeLabel(exercise.exercise_type) }} · @{{ exercise.calories_per_hour }} kcal/hr
+                                </p>
                             </div>
-                            <p class="text-sm text-gray-600 ml-10">@{{ getExerciseTypeLabel(exercise.exercise_type) }} · @{{ exercise.calories_per_hour }}kcal/시간</p>
+                            <div class="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 group-hover:text-primary-600 group-hover:border-primary-200 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right text-gray-400"></i>
                     </div>
                 </div>
+
+                <!-- Empty/Loading States -->
+                <div v-else-if="searching" class="text-center py-12">
+                    <div class="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p class="text-sm text-gray-400">검색 중...</p>
+                </div>
+                <div v-else-if="searchQuery && !searchResults.length" class="text-center py-12">
+                    <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <p class="text-sm text-gray-500">검색 결과가 없습니다</p>
+                </div>
+                <div v-else class="text-center py-12">
+                    <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <p class="text-sm text-gray-400">운동명을 검색해보세요</p>
+                </div>
             </div>
-            <p v-else-if="searchQuery && !searching" class="text-center text-gray-500 py-8">
-                검색 결과가 없습니다.
-            </p>
-            <p v-else-if="searching" class="text-center text-gray-500 py-8">
-                <i class="fas fa-spinner fa-spin mr-2"></i>검색 중...
-            </p>
         </div>
 
-        <!-- Exercise Form -->
-        <form @submit.prevent="handleSubmit" class="space-y-6">
-            <!-- Basic Information -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">기본 정보</h2>
+        <!-- Right Column: Form -->
+        <div class="lg:col-span-8">
+            <form @submit.prevent="handleSubmit" class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 font-heading">상세 정보 입력</h2>
+                    <span v-if="inputMethod === 'search' && selectedExercise" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-primary-50 text-primary-700">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        선택됨: @{{ selectedExercise.name }}
+                    </span>
+                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Basic Fields -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <!-- Date -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            날짜 <span class="text-red-500">*</span>
-                        </label>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">날짜</label>
                         <input
                             type="date"
                             v-model="form.date"
                             required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="w-full px-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all"
                         >
                     </div>
 
                     <!-- Time -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            시간
-                        </label>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">시간 (선택)</label>
                         <input
                             type="time"
                             v-model="form.exercise_time"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
-                    </div>
-
-                    <!-- Exercise Name -->
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            운동 이름 <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            v-model="form.exercise_name"
-                            :readonly="inputMethod === 'search' && selectedExercise"
-                            required
-                            placeholder="예: 런닝, 벤치프레스, 요가"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="w-full px-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all"
                         >
                     </div>
 
                     <!-- Exercise Type -->
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            운동 종류 <span class="text-red-500">*</span>
-                        </label>
-                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">운동 종류</label>
+                        <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
                             <button
+                                type="button"
                                 v-for="type in exerciseTypes"
                                 :key="type.value"
-                                type="button"
                                 @click="form.exercise_type = type.value"
-                                :class="['p-3 rounded-lg border-2 transition-all text-center', form.exercise_type === type.value ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300']"
+                                :class="form.exercise_type === type.value ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/20' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'"
+                                class="py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 flex flex-col sm:flex-row items-center justify-center gap-2"
                             >
-                                <i :class="[type.icon, 'text-xl mb-1', form.exercise_type === type.value ? 'text-primary' : 'text-gray-400']"></i>
-                                <p :class="['text-sm font-medium', form.exercise_type === type.value ? 'text-primary' : 'text-gray-700']">@{{ type.label }}</p>
+                                <span>@{{ type.label }}</span>
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Exercise Details -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">운동 상세</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Duration -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            운동 시간 (분) <span class="text-red-500">*</span>
-                        </label>
+                    <!-- Name (Manual) -->
+                    <div v-if="inputMethod === 'manual'" class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">운동 이름</label>
                         <input
-                            type="number"
-                            v-model.number="form.duration_minutes"
-                            @input="calculateCalories"
+                            type="text"
+                            v-model="form.exercise_name"
                             required
-                            min="1"
-                            placeholder="30"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            placeholder="예: 아침 조깅"
+                            class="w-full px-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all placeholder-gray-400"
                         >
-                    </div>
-
-                    <!-- Calories Burned -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            소모 칼로리 (kcal) <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="number"
-                            v-model.number="form.calories_burned"
-                            required
-                            min="0"
-                            step="0.1"
-                            placeholder="200"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
-                        <p v-if="selectedExercise" class="text-xs text-gray-500 mt-1">
-                            <i class="fas fa-info-circle mr-1"></i>@{{ selectedExercise.calories_per_hour }}kcal/시간 기준으로 자동 계산
-                        </p>
-                    </div>
-
-                    <!-- Sets (for strength training) -->
-                    <div v-if="form.exercise_type === 'strength'">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            세트 수
-                        </label>
-                        <input
-                            type="number"
-                            v-model.number="form.sets"
-                            min="1"
-                            placeholder="3"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
-                    </div>
-
-                    <!-- Reps (for strength training) -->
-                    <div v-if="form.exercise_type === 'strength'">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            반복 횟수
-                        </label>
-                        <input
-                            type="number"
-                            v-model.number="form.reps"
-                            min="1"
-                            placeholder="12"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
-                    </div>
-
-                    <!-- Distance (for cardio) -->
-                    <div v-if="form.exercise_type === 'cardio'">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            거리 (km)
-                        </label>
-                        <input
-                            type="number"
-                            v-model.number="form.distance_km"
-                            min="0"
-                            step="0.1"
-                            placeholder="5.0"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
-                    </div>
-
-                    <!-- Intensity -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            강도
-                        </label>
-                        <select
-                            v-model="form.intensity"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
-                            <option value="">선택 안함</option>
-                            <option value="low">낮음</option>
-                            <option value="medium">보통</option>
-                            <option value="high">높음</option>
-                        </select>
-                    </div>
-
-                    <!-- Notes -->
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            메모
-                        </label>
-                        <textarea
-                            v-model="form.notes"
-                            rows="3"
-                            placeholder="운동에 대한 메모를 입력하세요..."
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-                        ></textarea>
                     </div>
                 </div>
-            </div>
 
-            <!-- Exercise Preview -->
-            <div v-if="form.exercise_name && form.duration_minutes > 0" class="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-eye text-primary mr-2"></i>미리보기
-                </h2>
-                <div class="bg-white rounded-lg p-4">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg" :class="getExerciseTypeClass(form.exercise_type)">
-                            <i :class="getExerciseIcon(form.exercise_type)"></i>
-                        </div>
+                <!-- Stats Fields -->
+                <div class="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100">
+                    <h3 class="font-bold text-gray-900 mb-4 font-heading">활동 수치</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Duration -->
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900">@{{ form.exercise_name }}</h3>
-                            <p class="text-sm text-gray-500">@{{ getExerciseTypeLabel(form.exercise_type) }}</p>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">운동 시간 (분)</label>
+                            <input
+                                type="number"
+                                v-model.number="form.duration_minutes"
+                                @input="calculateCalories"
+                                required
+                                min="1"
+                                class="w-full px-4 py-3 bg-white border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all font-bold text-lg"
+                            >
+                        </div>
+
+                        <!-- Calories -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">소모 칼로리 (kcal)</label>
+                            <input
+                                type="number"
+                                v-model.number="form.calories_burned"
+                                required
+                                min="0"
+                                class="w-full px-4 py-3 bg-white border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all font-bold text-lg text-accent-600"
+                            >
+                            <p v-if="selectedExercise" class="text-xs text-gray-500 mt-2">
+                                * 자동 계산됨 (@{{ selectedExercise.calories_per_hour }} kcal/hr 기준)
+                            </p>
+                        </div>
+
+                        <!-- Dynamic Fields based on Type -->
+                        <template v-if="form.exercise_type === 'strength'">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">세트 수</label>
+                                <input type="number" v-model.number="form.sets" class="w-full px-4 py-3 bg-white border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">반복 횟수</label>
+                                <input type="number" v-model.number="form.reps" class="w-full px-4 py-3 bg-white border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all">
+                            </div>
+                        </template>
+
+                        <div v-if="form.exercise_type === 'cardio'">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">거리 (km)</label>
+                            <input type="number" v-model.number="form.distance_km" step="0.1" class="w-full px-4 py-3 bg-white border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">강도</label>
+                            <select v-model="form.intensity" class="w-full px-4 py-3 bg-white border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all">
+                                <option value="">선택 안함</option>
+                                <option value="low">낮음</option>
+                                <option value="medium">보통</option>
+                                <option value="high">높음</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
-                            <i class="far fa-clock mr-1"></i>@{{ form.duration_minutes }}분
-                        </span>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary/10 text-secondary">
-                            <i class="fas fa-fire mr-1"></i>@{{ form.calories_burned }}kcal
-                        </span>
-                        <span v-if="form.sets" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-accent/10 text-accent">
-                            <i class="fas fa-dumbbell mr-1"></i>@{{ form.sets }}세트
-                        </span>
-                        <span v-if="form.reps" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            <i class="fas fa-redo mr-1"></i>@{{ form.reps }}회
-                        </span>
-                        <span v-if="form.distance_km" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-route mr-1"></i>@{{ form.distance_km }}km
-                        </span>
-                        <span v-if="form.intensity" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="getIntensityClass(form.intensity)">
-                            <i class="fas fa-tachometer-alt mr-1"></i>@{{ getIntensityLabel(form.intensity) }}
-                        </span>
+                </div>
+
+                <!-- Preview Card -->
+                <div v-if="form.exercise_name && form.duration_minutes > 0" class="bg-gradient-to-br from-primary-50 to-accent-50 rounded-3xl p-6 mb-8 border border-primary-100">
+                    <h3 class="font-bold text-gray-900 mb-4 font-heading flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        기록 미리보기
+                    </h3>
+                    <div class="bg-white/60 backdrop-blur-sm rounded-2xl p-4">
+                        <div class="flex items-center gap-4 mb-3">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white" :class="getExerciseTypeClass(form.exercise_type)">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-lg">@{{ form.exercise_name }}</h4>
+                                <p class="text-sm text-gray-600">@{{ getExerciseTypeLabel(form.exercise_type) }}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-white rounded-lg text-sm font-bold text-gray-700 shadow-sm border border-gray-100">
+                                @{{ form.duration_minutes }}분
+                            </span>
+                            <span class="px-3 py-1 bg-white rounded-lg text-sm font-bold text-accent-600 shadow-sm border border-gray-100">
+                                @{{ form.calories_burned }} kcal
+                            </span>
+                            <span v-if="form.distance_km" class="px-3 py-1 bg-white rounded-lg text-sm font-bold text-blue-600 shadow-sm border border-gray-100">
+                                @{{ form.distance_km }} km
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Error Message -->
-            <div v-if="errorMessage" class="rounded-md bg-red-50 p-4 border border-red-200">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-exclamation-circle text-red-400"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm text-red-800">@{{ errorMessage }}</p>
-                    </div>
+                <!-- Error Message -->
+                <div v-if="errorMessage" class="mb-6 p-4 rounded-2xl bg-red-50 text-red-600 text-sm font-bold flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    @{{ errorMessage }}
                 </div>
-            </div>
 
-            <!-- Action Buttons -->
-            <div class="flex gap-4">
-                <button
-                    type="submit"
-                    :disabled="loading"
-                    class="flex-1 bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <span v-if="loading"><i class="fas fa-spinner fa-spin mr-2"></i>저장 중...</span>
-                    <span v-else><i class="fas fa-save mr-2"></i>@{{ isEditMode ? '수정하기' : '추가하기' }}</span>
-                </button>
-                <a
-                    href="{{ route('exercises.index') }}"
-                    class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-center"
-                >
-                    취소
-                </a>
-            </div>
-        </form>
+                <!-- Notes -->
+                <div class="mb-8">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">메모</label>
+                    <textarea
+                        v-model="form.notes"
+                        rows="2"
+                        class="w-full px-4 py-3 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all resize-none"
+                        placeholder="메모를 남겨보세요"
+                    ></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-4">
+                    <button
+                        type="button"
+                        @click="$router.back()"
+                        class="flex-1 px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-colors cursor-pointer"
+                    >
+                        취소
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="loading || (inputMethod === 'search' && !selectedExercise) || (inputMethod === 'manual' && !form.exercise_name)"
+                        class="flex-[2] px-6 py-4 bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-700 hover:to-accent-700 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-[0.98] cursor-pointer"
+                    >
+                        <span v-if="loading" class="flex items-center justify-center">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            저장 중...
+                        </span>
+                        <span v-else>@{{ isEditMode ? '수정 완료' : '기록 저장' }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 @endsection
@@ -372,16 +320,15 @@ Vue.createApp({
             loading: false,
             errorMessage: '',
             exerciseTypes: [
-                { value: 'cardio', label: '유산소', icon: 'fas fa-running' },
-                { value: 'strength', label: '근력', icon: 'fas fa-dumbbell' },
-                { value: 'flexibility', label: '유연성', icon: 'fas fa-heart' },
-                { value: 'sports', label: '스포츠', icon: 'fas fa-basketball-ball' },
-                { value: 'other', label: '기타', icon: 'fas fa-shoe-prints' }
+                { value: 'cardio', label: '유산소' },
+                { value: 'strength', label: '근력' },
+                { value: 'flexibility', label: '유연성' },
+                { value: 'sports', label: '스포츠' },
+                { value: 'other', label: '기타' }
             ]
         }
     },
     mounted() {
-        // Check if editing existing exercise
         const urlParams = new URLSearchParams(window.location.search);
         const exerciseId = urlParams.get('id');
         if (exerciseId) {
@@ -414,7 +361,6 @@ Vue.createApp({
             this.searchQuery = exercise.name;
             this.searchResults = [];
 
-            // Auto-calculate calories if duration is set
             if (this.form.duration_minutes) {
                 this.calculateCalories();
             }
@@ -422,7 +368,6 @@ Vue.createApp({
         calculateCalories() {
             if (!this.selectedExercise || !this.form.duration_minutes) return;
 
-            // Calculate based on calories per hour
             this.form.calories_burned = Math.round(
                 (this.selectedExercise.calories_per_hour / 60) * this.form.duration_minutes * 10
             ) / 10;
@@ -454,9 +399,7 @@ Vue.createApp({
                 }
             } catch (error) {
                 console.error('Failed to load exercise:', error);
-                window.dispatchEvent(new CustomEvent('show-toast', {
-                    detail: { message: '운동 정보를 불러오는데 실패했습니다.', type: 'error' }
-                }));
+                if (window.showToast) window.showToast('운동 정보를 불러오는데 실패했습니다.', 'error');
             }
         },
         async handleSubmit() {
@@ -473,12 +416,7 @@ Vue.createApp({
                 const response = await axios[method](url, this.form);
 
                 if (response.data.success) {
-                    window.dispatchEvent(new CustomEvent('show-toast', {
-                        detail: {
-                            message: this.isEditMode ? '운동 기록이 수정되었습니다.' : '운동 기록이 추가되었습니다.',
-                            type: 'success'
-                        }
-                    }));
+                    if (window.showToast) window.showToast(this.isEditMode ? '운동 기록이 수정되었습니다.' : '운동 기록이 추가되었습니다.', 'success');
 
                     setTimeout(() => {
                         window.location.href = '{{ route("exercises.index") }}';
@@ -497,23 +435,13 @@ Vue.createApp({
         },
         getExerciseTypeClass(type) {
             const types = {
-                'cardio': 'bg-red-500',
-                'strength': 'bg-blue-500',
-                'flexibility': 'bg-green-500',
-                'sports': 'bg-orange-500',
-                'other': 'bg-gray-500'
+                'cardio': 'bg-gradient-to-br from-red-400 to-orange-500 shadow-orange-500/30',
+                'strength': 'bg-gradient-to-br from-blue-400 to-indigo-500 shadow-blue-500/30',
+                'flexibility': 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-emerald-500/30',
+                'sports': 'bg-gradient-to-br from-amber-400 to-yellow-500 shadow-amber-500/30',
+                'other': 'bg-gradient-to-br from-gray-400 to-slate-500 shadow-gray-500/30'
             };
-            return types[type] || 'bg-gray-500';
-        },
-        getExerciseIcon(type) {
-            const icons = {
-                'cardio': 'fas fa-running',
-                'strength': 'fas fa-dumbbell',
-                'flexibility': 'fas fa-heart',
-                'sports': 'fas fa-basketball-ball',
-                'other': 'fas fa-shoe-prints'
-            };
-            return icons[type] || 'fas fa-shoe-prints';
+            return types[type] || types['other'];
         },
         getExerciseTypeLabel(type) {
             const labels = {
@@ -544,4 +472,24 @@ Vue.createApp({
     }
 }).mount('#exercise-form-app');
 </script>
+
+<style>
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translate3d(0, 20px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #e5e7eb;
+    border-radius: 20px;
+}
+</style>
 @endpush
