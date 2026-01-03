@@ -95,7 +95,7 @@
                                 <div v-if="dropdownOpen"
                                      v-click-outside="closeDropdown"
                                      class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-50">
-                                    <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="fas fa-user mr-2"></i> 프로필
                                     </a>
                                     <form method="POST" action="{{ route('logout') }}">
