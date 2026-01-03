@@ -283,32 +283,32 @@ const MealTypeSection = {
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h3 class="text-lg font-semibold text-gray-900">
                     <i :class="['fas', icon, 'text-primary mr-2']"></i>
-                    {{ title }} <span class="text-sm font-normal text-gray-500">({{ meals.length }})</span>
+                    @{{ title }} <span class="text-sm font-normal text-gray-500">(@{{ meals.length }})</span>
                 </h3>
             </div>
             <div class="p-4 space-y-3">
                 <div v-for="meal in meals" :key="meal.id" class="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <h4 class="font-semibold text-gray-900 mb-2">{{ meal.food_name }}</h4>
+                            <h4 class="font-semibold text-gray-900 mb-2">@{{ meal.food_name }}</h4>
                             <div class="flex flex-wrap gap-2 mb-3">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
-                                    <i class="fas fa-fire mr-1"></i>{{ meal.calories }}kcal
+                                    <i class="fas fa-fire mr-1"></i>@{{ meal.calories }}kcal
                                 </span>
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                    P: {{ meal.protein_g }}g
+                                    P: @{{ meal.protein_g }}g
                                 </span>
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                                    C: {{ meal.carbs_g }}g
+                                    C: @{{ meal.carbs_g }}g
                                 </span>
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-                                    F: {{ meal.fat_g }}g
+                                    F: @{{ meal.fat_g }}g
                                 </span>
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
-                                    <i class="fas fa-balance-scale mr-1"></i>{{ meal.serving_size }}{{ meal.serving_unit }}
+                                    <i class="fas fa-balance-scale mr-1"></i>@{{ meal.serving_size }}@{{ meal.serving_unit }}
                                 </span>
                             </div>
-                            <p v-if="meal.description" class="text-sm text-gray-600 italic">{{ meal.description }}</p>
+                            <p v-if="meal.description" class="text-sm text-gray-600 italic">@{{ meal.description }}</p>
                         </div>
                         <button @click="$emit('useMeal', meal)" class="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap">
                             <i class="fas fa-plus mr-1"></i>사용

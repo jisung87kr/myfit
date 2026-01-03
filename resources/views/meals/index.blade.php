@@ -182,34 +182,34 @@ const MealTypeSection = {
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h3 class="text-lg font-semibold text-gray-900">
                     <i :class="['fas', icon, 'text-primary mr-2']"></i>
-                    {{ title }} <span class="text-sm font-normal text-gray-500">({{ meals.length }})</span>
+                    @{{ title }} <span class="text-sm font-normal text-gray-500">(@{{ meals.length }})</span>
                 </h3>
             </div>
             <div class="p-4 space-y-3">
                 <div v-for="meal in meals" :key="meal.id" class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <h4 class="font-medium text-gray-900">{{ meal.food_name }}</h4>
+                            <h4 class="font-medium text-gray-900">@{{ meal.food_name }}</h4>
                             <p class="text-sm text-gray-500 mt-1">
-                                {{ meal.serving_size }}g
-                                <span v-if="meal.meal_time"> · {{ formatTime(meal.meal_time) }}</span>
+                                @{{ meal.serving_size }}g
+                                <span v-if="meal.meal_time"> · @{{ formatTime(meal.meal_time) }}</span>
                             </p>
                             <div class="mt-2 flex flex-wrap gap-2">
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                                    🔥 {{ meal.calories }} kcal
+                                    🔥 @{{ meal.calories }} kcal
                                 </span>
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                                    P {{ meal.protein_g }}g
+                                    P @{{ meal.protein_g }}g
                                 </span>
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                                    C {{ meal.carbs_g }}g
+                                    C @{{ meal.carbs_g }}g
                                 </span>
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-                                    F {{ meal.fat_g }}g
+                                    F @{{ meal.fat_g }}g
                                 </span>
                             </div>
                             <p v-if="meal.notes" class="text-sm text-gray-600 mt-2 italic">
-                                {{ meal.notes }}
+                                @{{ meal.notes }}
                             </p>
                         </div>
                         <div class="ml-4 flex space-x-2">
