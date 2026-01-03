@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\DietPlan;
+use App\Notifications\DietPlanFailedNotification;
+use App\Notifications\DietPlanReadyNotification;
 use App\Services\DietPlanService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -54,7 +56,8 @@ class GenerateDietPlanJob implements ShouldQueue
                 'diet_plan_id' => $this->dietPlan->id,
             ]);
 
-            // TODO: Send notification to user that plan is ready
+            // Send notification to user that plan is ready
+            $this->dietPlan->user->notify(new DietPlanReadyNotification($this->dietPlan));
 
         } catch (\Exception $e) {
             Log::error('Failed to generate diet plan', [
@@ -62,9 +65,6 @@ class GenerateDietPlanJob implements ShouldQueue
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-
-            // Update plan status to failed (if we add this status)
-            // For now, it will stay in 'generating' status on failure
 
             throw $e; // Re-throw to allow retry
         }
@@ -80,7 +80,10 @@ class GenerateDietPlanJob implements ShouldQueue
             'error' => $exception->getMessage(),
         ]);
 
-        // TODO: Notify user that plan generation failed
-        // TODO: Update plan status or delete the failed plan
+        // Update plan status to failed
+        $this->dietPlan->markAsFailed();
+
+        // Notify user that plan generation failed
+        $this->dietPlan->user->notify(new DietPlanFailedNotification($this->dietPlan));
     }
 }

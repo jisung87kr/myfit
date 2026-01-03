@@ -115,4 +115,20 @@ class DietPlan extends Model
     {
         $this->update(['status' => 'archived']);
     }
+
+    /**
+     * Mark plan as failed
+     */
+    public function markAsFailed(): void
+    {
+        $this->update(['status' => 'failed']);
+    }
+
+    /**
+     * Check if plan generation failed
+     */
+    public function isFailed(): bool
+    {
+        return $this->status === 'failed';
+    }
 }
