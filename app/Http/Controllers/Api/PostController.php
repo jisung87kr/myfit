@@ -55,7 +55,7 @@ class PostController extends Controller
             });
         }
 
-        return response()->success('Posts retrieved successfully', $posts);
+        return response()->success($posts, 'Posts retrieved successfully');
     }
 
     public function store(Request $request): JsonResponse
@@ -90,7 +90,7 @@ class PostController extends Controller
 
         $post->load('user:id,name,profile_photo_path');
 
-        return response()->created('Post created successfully', ['post' => $post]);
+        return response()->created(['post' => $post], 'Post created successfully');
     }
 
     public function show(Post $post): JsonResponse
@@ -103,7 +103,7 @@ class PostController extends Controller
             $post->is_liked = $post->isLikedBy(auth()->user());
         }
 
-        return response()->success('Post retrieved successfully', ['post' => $post]);
+        return response()->success(['post' => $post], 'Post retrieved successfully');
     }
 
     public function update(Request $request, Post $post): JsonResponse
@@ -124,7 +124,7 @@ class PostController extends Controller
 
         $post->update($request->only(['category', 'title', 'content']));
 
-        return response()->success('Post updated successfully', ['post' => $post->fresh()]);
+        return response()->success(['post' => $post->fresh()], 'Post updated successfully');
     }
 
     public function destroy(Post $post): JsonResponse
@@ -135,7 +135,7 @@ class PostController extends Controller
 
         $post->delete();
 
-        return response()->success('Post deleted successfully');
+        return response()->success(null, 'Post deleted successfully');
     }
 
     public function like(Post $post): JsonResponse
@@ -157,25 +157,27 @@ class PostController extends Controller
             'likeable_id' => $post->id,
         ]);
 
-        return response()->success('Post liked successfully', [
+        return response()->success([
             'likes_count' => $post->fresh()->likes_count,
-        ]);
+        ], 'Post liked successfully');
     }
 
     public function unlike(Post $post): JsonResponse
     {
-        $deleted = Like::where('user_id', auth()->id())
+        $like = Like::where('user_id', auth()->id())
             ->where('likeable_type', Post::class)
             ->where('likeable_id', $post->id)
-            ->delete();
+            ->first();
 
-        if (!$deleted) {
+        if (!$like) {
             return response()->error('You have not liked this post', [], 400);
         }
 
-        return response()->success('Post unliked successfully', [
+        $like->delete();
+
+        return response()->success([
             'likes_count' => $post->fresh()->likes_count,
-        ]);
+        ], 'Post unliked successfully');
     }
 
     public function myPosts(Request $request): JsonResponse
@@ -185,7 +187,7 @@ class PostController extends Controller
             ->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->success('My posts retrieved successfully', $posts);
+        return response()->success($posts, 'My posts retrieved successfully');
     }
 
     public function categories(): JsonResponse
@@ -197,6 +199,6 @@ class PostController extends Controller
             ['value' => 'daily', 'label' => '일상', 'description' => '오늘 하루를 공유해주세요'],
         ];
 
-        return response()->success('Categories retrieved successfully', ['categories' => $categories]);
+        return response()->success(['categories' => $categories], 'Categories retrieved successfully');
     }
 }

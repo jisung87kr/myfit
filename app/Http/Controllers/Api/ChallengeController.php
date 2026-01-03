@@ -54,7 +54,7 @@ class ChallengeController extends Controller
             });
         }
 
-        return response()->success('Challenges retrieved successfully', $challenges);
+        return response()->success($challenges, 'Challenges retrieved successfully');
     }
 
     public function show(Challenge $challenge): JsonResponse
@@ -79,7 +79,7 @@ class ChallengeController extends Controller
             ->limit(10)
             ->get();
 
-        return response()->success('Challenge retrieved successfully', $data);
+        return response()->success($data, 'Challenge retrieved successfully');
     }
 
     public function join(Challenge $challenge): JsonResponse
@@ -111,9 +111,9 @@ class ChallengeController extends Controller
             'joined_at' => now(),
         ]);
 
-        return response()->created('Successfully joined the challenge', [
+        return response()->created([
             'participation' => $participant,
-        ]);
+        ], 'Successfully joined the challenge');
     }
 
     public function leave(Challenge $challenge): JsonResponse
@@ -132,7 +132,7 @@ class ChallengeController extends Controller
 
         $participant->update(['status' => 'withdrawn']);
 
-        return response()->success('Successfully left the challenge');
+        return response()->success(null, 'Successfully left the challenge');
     }
 
     public function myChallenges(Request $request): JsonResponse
@@ -150,7 +150,7 @@ class ChallengeController extends Controller
         $participations = $query->orderByDesc('joined_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->success('My challenges retrieved successfully', $participations);
+        return response()->success($participations, 'My challenges retrieved successfully');
     }
 
     public function updateProgress(Challenge $challenge): JsonResponse
@@ -176,9 +176,9 @@ class ChallengeController extends Controller
             $this->badgeService->awardBadge(auth()->user(), $challenge->badge);
         }
 
-        return response()->success('Progress updated successfully', [
+        return response()->success([
             'participation' => $participant->fresh(),
-        ]);
+        ], 'Progress updated successfully');
     }
 
     private function calculateCurrentValue(Challenge $challenge, int $userId): float
@@ -249,6 +249,6 @@ class ChallengeController extends Controller
             ->orderByDesc('progress')
             ->paginate($request->get('per_page', 20));
 
-        return response()->success('Leaderboard retrieved successfully', $leaderboard);
+        return response()->success($leaderboard, 'Leaderboard retrieved successfully');
     }
 }

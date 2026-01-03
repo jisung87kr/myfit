@@ -30,7 +30,7 @@ class FriendshipController extends Controller
 
         $friends = $sentFriends->merge($receivedFriends)->unique('id')->values();
 
-        return response()->success('Friends retrieved successfully', ['friends' => $friends]);
+        return response()->success(['friends' => $friends], 'Friends retrieved successfully');
     }
 
     public function pendingRequests(): JsonResponse
@@ -41,7 +41,7 @@ class FriendshipController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return response()->success('Pending requests retrieved successfully', ['requests' => $requests]);
+        return response()->success(['requests' => $requests], 'Pending requests retrieved successfully');
     }
 
     public function sentRequests(): JsonResponse
@@ -52,7 +52,7 @@ class FriendshipController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return response()->success('Sent requests retrieved successfully', ['requests' => $requests]);
+        return response()->success(['requests' => $requests], 'Sent requests retrieved successfully');
     }
 
     public function sendRequest(Request $request): JsonResponse
@@ -97,7 +97,7 @@ class FriendshipController extends Controller
             'status' => 'pending',
         ]);
 
-        return response()->created('Friend request sent successfully', ['friendship' => $friendship]);
+        return response()->created(['friendship' => $friendship], 'Friend request sent successfully');
     }
 
     public function acceptRequest(Friendship $friendship): JsonResponse
@@ -112,7 +112,7 @@ class FriendshipController extends Controller
 
         $friendship->accept();
 
-        return response()->success('Friend request accepted', ['friendship' => $friendship->fresh()]);
+        return response()->success(['friendship' => $friendship->fresh()], 'Friend request accepted');
     }
 
     public function rejectRequest(Friendship $friendship): JsonResponse
@@ -127,7 +127,7 @@ class FriendshipController extends Controller
 
         $friendship->reject();
 
-        return response()->success('Friend request rejected');
+        return response()->success(null, 'Friend request rejected');
     }
 
     public function cancelRequest(Friendship $friendship): JsonResponse
@@ -142,7 +142,7 @@ class FriendshipController extends Controller
 
         $friendship->delete();
 
-        return response()->success('Friend request cancelled');
+        return response()->success(null, 'Friend request cancelled');
     }
 
     public function removeFriend(User $friend): JsonResponse
@@ -161,7 +161,7 @@ class FriendshipController extends Controller
 
         $friendship->delete();
 
-        return response()->success('Friend removed successfully');
+        return response()->success(null, 'Friend removed successfully');
     }
 
     public function blockUser(User $user): JsonResponse
@@ -193,7 +193,7 @@ class FriendshipController extends Controller
             ]);
         }
 
-        return response()->success('User blocked successfully');
+        return response()->success(null, 'User blocked successfully');
     }
 
     public function unblockUser(User $user): JsonResponse
@@ -207,7 +207,7 @@ class FriendshipController extends Controller
             return response()->error('User is not blocked', [], 400);
         }
 
-        return response()->success('User unblocked successfully');
+        return response()->success(null, 'User unblocked successfully');
     }
 
     public function friendProgress(User $friend): JsonResponse
@@ -237,7 +237,7 @@ class FriendshipController extends Controller
             ->orderByDesc('logged_at')
             ->first();
 
-        return response()->success('Friend progress retrieved successfully', [
+        return response()->success([
             'friend' => [
                 'id' => $friend->id,
                 'name' => $friend->name,
@@ -246,7 +246,7 @@ class FriendshipController extends Controller
             'meal_summary' => $mealLogs,
             'exercise_summary' => $exerciseLogs,
             'latest_weight' => $latestWeight?->weight,
-        ]);
+        ], 'Friend progress retrieved successfully');
     }
 
     public function searchUsers(Request $request): JsonResponse
@@ -268,6 +268,6 @@ class FriendshipController extends Controller
             ->limit(20)
             ->get();
 
-        return response()->success('Users found', ['users' => $users]);
+        return response()->success(['users' => $users], 'Users found');
     }
 }

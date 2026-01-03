@@ -32,7 +32,7 @@ class CommentController extends Controller
             });
         }
 
-        return response()->success('Comments retrieved successfully', $comments);
+        return response()->success($comments, 'Comments retrieved successfully');
     }
 
     public function store(Request $request, Post $post): JsonResponse
@@ -63,7 +63,7 @@ class CommentController extends Controller
 
         $comment->load('user:id,name,profile_photo_path');
 
-        return response()->created('Comment created successfully', ['comment' => $comment]);
+        return response()->created(['comment' => $comment], 'Comment created successfully');
     }
 
     public function update(Request $request, Comment $comment): JsonResponse
@@ -82,7 +82,7 @@ class CommentController extends Controller
 
         $comment->update(['content' => $request->content]);
 
-        return response()->success('Comment updated successfully', ['comment' => $comment->fresh()]);
+        return response()->success(['comment' => $comment->fresh()], 'Comment updated successfully');
     }
 
     public function destroy(Comment $comment): JsonResponse
@@ -93,7 +93,7 @@ class CommentController extends Controller
 
         $comment->delete();
 
-        return response()->success('Comment deleted successfully');
+        return response()->success(null, 'Comment deleted successfully');
     }
 
     public function like(Comment $comment): JsonResponse
@@ -115,24 +115,26 @@ class CommentController extends Controller
             'likeable_id' => $comment->id,
         ]);
 
-        return response()->success('Comment liked successfully', [
+        return response()->success([
             'likes_count' => $comment->fresh()->likes_count,
-        ]);
+        ], 'Comment liked successfully');
     }
 
     public function unlike(Comment $comment): JsonResponse
     {
-        $deleted = Like::where('user_id', auth()->id())
+        $like = Like::where('user_id', auth()->id())
             ->where('likeable_type', Comment::class)
             ->where('likeable_id', $comment->id)
-            ->delete();
+            ->first();
 
-        if (!$deleted) {
+        if (!$like) {
             return response()->error('You have not liked this comment', [], 400);
         }
 
-        return response()->success('Comment unliked successfully', [
+        $like->delete();
+
+        return response()->success([
             'likes_count' => $comment->fresh()->likes_count,
-        ]);
+        ], 'Comment unliked successfully');
     }
 }
