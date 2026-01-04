@@ -254,6 +254,44 @@
         </div>
     </div>
 
+    <!-- Generating Loading Modal -->
+    <div v-if="generating" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
+            <!-- Animated Icon -->
+            <div class="relative w-24 h-24 mx-auto mb-6">
+                <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-primary-500 rounded-full border-t-transparent animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold text-gray-900 mb-2 font-heading">AI가 식단을 생성 중입니다</h3>
+            <p class="text-gray-500 mb-4">맞춤 식단과 운동 플랜을 구성하고 있습니다.</p>
+
+            <!-- Progress Info -->
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
+                <div class="flex items-center justify-center gap-2 text-amber-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="font-bold">예상 소요 시간: 3~5분</span>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-400">이 페이지를 닫지 마세요. 완료되면 자동으로 결과가 표시됩니다.</p>
+
+            <!-- Animated Dots -->
+            <div class="flex justify-center gap-1 mt-4">
+                <span class="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 0ms;"></span>
+                <span class="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 150ms;"></span>
+                <span class="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 300ms;"></span>
+            </div>
+        </div>
+    </div>
+
     <!-- Use Meal Modal -->
     <div v-if="showUseMealModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showUseMealModal = false">
         <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 transform transition-all scale-100">
@@ -440,16 +478,17 @@ Vue.createApp({
         },
         async generateDietPlan() {
             this.generating = true;
+            this.showGenerateModal = false;
             this.errorMessage = '';
             try {
                 const response = await axios.post('/api/diet-plans/generate', this.generateForm);
                 if (response.data.success) {
                     if (window.showToast) window.showToast('새 식단이 생성되었습니다!', 'success');
-                    this.showGenerateModal = false;
                     this.loadDietPlan();
                 }
             } catch (error) {
                 this.errorMessage = error.response?.data?.message || '식단 생성에 실패했습니다.';
+                if (window.showToast) window.showToast(this.errorMessage, 'error');
             } finally {
                 this.generating = false;
             }
