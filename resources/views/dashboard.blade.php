@@ -39,10 +39,10 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
             <!-- 1. Hero: Calorie Balance (Span 6 on desktop) -->
             <div class="md:col-span-8 lg:col-span-6 bg-white rounded-3xl p-8 shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-8 opacity-5">
-                    <svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
-                </div>
-                
+{{--                <div class="absolute top-0 right-0 p-8 opacity-5">--}}
+{{--                    <svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>--}}
+{{--                </div>--}}
+
                 <div class="relative z-10 h-full flex flex-col justify-between">
                     <div class="flex justify-between items-start mb-6">
                         <div>
@@ -54,23 +54,23 @@
                         </div>
                     </div>
 
-                    <div v-if="todayData.calorie_balance" class="flex flex-col items-center justify-center py-4">
+                    <div class="flex flex-col items-center justify-center py-4">
                         <div class="relative w-48 h-48 md:w-56 md:h-56">
                             <!-- Circular Progress SVG -->
                             <svg class="w-full h-full transform -rotate-90">
                                 <circle cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="12" fill="transparent" class="text-gray-100" />
-                                <circle cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="12" fill="transparent" 
-                                    :stroke-dasharray="circumference" 
-                                    :stroke-dashoffset="circumference - (todayData.calorie_balance.percentage_of_target / 100) * circumference"
+                                <circle cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="12" fill="transparent"
+                                    :stroke-dasharray="circumference"
+                                    :stroke-dashoffset="circumference - (calorieBalance.percentage / 100) * circumference"
                                     class="text-primary-500 transition-all duration-1000 ease-out"
                                     stroke-linecap="round" />
                             </svg>
                             <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                                 <span class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tighter">
-                                    @{{ todayData.calorie_balance.percentage_of_target.toFixed(0) }}<span class="text-2xl md:text-3xl text-gray-400 font-medium">%</span>
+                                    @{{ calorieBalance.percentage }}<span class="text-2xl md:text-3xl text-gray-400 font-medium">%</span>
                                 </span>
                                 <span class="text-sm text-gray-500 font-medium mt-1">
-                                    @{{ todayData.calorie_balance.net_calories.toFixed(0) }} / @{{ todayData.calorie_balance.target_calories }} kcal
+                                    @{{ calorieBalance.netCalories }} / @{{ calorieBalance.targetCalories }} kcal
                                 </span>
                             </div>
                         </div>
@@ -79,16 +79,16 @@
                     <div class="grid grid-cols-3 gap-4 mt-6">
                         <div class="text-center p-3 rounded-2xl bg-gray-50 group-hover:bg-primary-50 transition-colors duration-300">
                             <p class="text-xs text-gray-500 mb-1">섭취</p>
-                            <p class="text-lg font-bold text-gray-900">@{{ todayData.calorie_balance?.calories_consumed.toFixed(0) }}</p>
+                            <p class="text-lg font-bold text-gray-900">@{{ calorieBalance.consumed }}</p>
                         </div>
                         <div class="text-center p-3 rounded-2xl bg-gray-50 group-hover:bg-accent-50 transition-colors duration-300">
                             <p class="text-xs text-gray-500 mb-1">소모</p>
-                            <p class="text-lg font-bold text-gray-900">@{{ todayData.calorie_balance?.calories_burned.toFixed(0) }}</p>
+                            <p class="text-lg font-bold text-gray-900">@{{ calorieBalance.burned }}</p>
                         </div>
                         <div class="text-center p-3 rounded-2xl bg-gray-50 group-hover:bg-gray-100 transition-colors duration-300">
                             <p class="text-xs text-gray-500 mb-1">잔여</p>
-                            <p class="text-lg font-bold" :class="todayData.calorie_balance?.remaining_calories >= 0 ? 'text-green-600' : 'text-rose-500'">
-                                @{{ todayData.calorie_balance?.remaining_calories.toFixed(0) }}
+                            <p class="text-lg font-bold" :class="calorieBalance.remaining >= 0 ? 'text-green-600' : 'text-rose-500'">
+                                @{{ calorieBalance.remaining }}
                             </p>
                         </div>
                     </div>
@@ -108,7 +108,7 @@
                     <p class="text-gray-500 text-sm font-medium">현재 체중</p>
                     <div class="flex items-end space-x-2 mt-1">
                         <h3 class="text-3xl font-bold text-gray-900">
-                            @{{ dashboard.current_weight || '-' }}
+                            @{{ todayData.weight?.current_weight || dashboard.current_weight || '-' }}
                         </h3>
                         <span class="text-gray-400 font-medium mb-1">kg</span>
                     </div>
@@ -175,7 +175,7 @@
                     <h3 class="text-lg font-bold text-gray-900 font-heading">영양 섭취</h3>
                     <a href="{{ route('meals.index') }}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">상세보기</a>
                 </div>
-                
+
                 <div class="space-y-5">
                     <!-- Protein -->
                     <div>
@@ -208,7 +208,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
                     <span class="text-sm text-gray-500">오늘 식사 횟수</span>
                     <span class="text-lg font-bold text-gray-900">@{{ todayData.nutrition.meal_count }}회</span>
@@ -281,17 +281,9 @@ Vue.createApp({
                     calories_burned: 0,
                     duration_minutes: 0,
                     exercise_count: 0,
-                    exercises_by_intensity: { '낮음': 0, '보통': 0, '높음': 0, '매우 높음': 0 }
+                    exercises_by_intensity: {}
                 },
-                weight: null,
-                calorie_balance: {
-                    net_calories: 0,
-                    target_calories: 2000,
-                    calories_consumed: 0,
-                    calories_burned: 0,
-                    percentage_of_target: 0,
-                    remaining_calories: 0
-                }
+                weight: null
             }
         }
     },
@@ -303,10 +295,24 @@ Vue.createApp({
                    this.dashboard.total_entries.weights;
         },
         circumference() {
-            // 2 * PI * r (r=45%)
-            // If r is relative to viewbox size, usually we calculate based on pixels or just use CSS calc if simple.
-            // Here, r=45. Let's assume viewbox 100x100.
-            return 2 * Math.PI * 45; 
+            return 2 * Math.PI * 45;
+        },
+        calorieBalance() {
+            const consumed = Math.round(this.todayData.nutrition?.calories_consumed || 0);
+            const burned = Math.round(this.todayData.exercise?.calories_burned || 0);
+            const targetCalories = this.dashboard.target_calories || 2000;
+            const netCalories = consumed - burned;
+            const percentage = Math.min(Math.round((consumed / targetCalories) * 100), 100);
+            const remaining = targetCalories - consumed;
+
+            return {
+                consumed,
+                burned,
+                targetCalories,
+                netCalories,
+                percentage,
+                remaining
+            };
         }
     },
     async mounted() {
