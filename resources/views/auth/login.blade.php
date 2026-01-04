@@ -107,10 +107,12 @@
                     </button>
 
                     <!-- Error Message -->
-                    <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-100 rounded-2xl animate-pulse">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <p class="text-sm font-bold text-red-600">@{{ errorMessage }}</p>
+                    <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 rounded-2xl">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 w-5 h-5 mt-0.5">
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <p class="text-sm font-medium text-red-700">@{{ errorMessage }}</p>
                         </div>
                     </div>
                 </form>
@@ -183,16 +185,27 @@ Vue.createApp({
                 const response = await axios.post('/login', this.form);
 
                 if (response.data.success) {
-                    localStorage.setItem('auth_token', response.data.data.token);
+                    if (response.data.data?.token) {
+                        localStorage.setItem('auth_token', response.data.data.token);
+                    }
                     window.location.href = '{{ route("dashboard") }}';
                 }
             } catch (error) {
-                if (error.response && error.response.status === 422) {
-                    this.errors = error.response.data.data || {};
-                } else if (error.response && error.response.status === 401) {
-                    this.errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+                const status = error.response?.status;
+                const data = error.response?.data;
+
+                if (status === 422) {
+                    // Validation errors
+                    this.errors = data?.errors || data?.data || {};
+                    if (data?.message) {
+                        this.errorMessage = data.message;
+                    }
+                } else if (status === 401) {
+                    this.errorMessage = data?.message || '이메일 또는 비밀번호가 올바르지 않습니다.';
+                } else if (status === 429) {
+                    this.errorMessage = '너무 많은 시도입니다. 잠시 후 다시 시도해주세요.';
                 } else {
-                    this.errorMessage = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
+                    this.errorMessage = data?.message || '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
                 }
             } finally {
                 this.loading = false;
