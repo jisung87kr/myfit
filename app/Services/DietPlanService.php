@@ -17,26 +17,30 @@ use Illuminate\Support\Facades\Log;
 
 class DietPlanService
 {
-    private const PLAN_DURATION_DAYS = 7;
+    private const DEFAULT_PLAN_DURATION_DAYS = 7;
     private const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
     /**
      * Generate a new diet plan for a user
      */
-    public function generatePlan(User $user, ?int $surveyResponseId = null): DietPlan
+    public function generatePlan(User $user, ?int $surveyResponseId = null, int $durationDays = self::DEFAULT_PLAN_DURATION_DAYS): DietPlan
     {
+
         // Create initial plan with 'generating' status
         $dietPlan = DietPlan::create([
             'user_id' => $user->id,
             'survey_response_id' => $surveyResponseId,
             'status' => 'generating',
             'start_date' => Carbon::now(),
-            'end_date' => Carbon::now()->addDays(self::PLAN_DURATION_DAYS - 1),
+            'end_date' => Carbon::now()->addDays($durationDays - 1),
+            'duration_days' => $durationDays,
             'target_calories_per_day' => $this->getTargetCalories($user),
         ]);
 
         return $dietPlan;
     }
+
+    private const CHUNK_SIZE_DAYS = 7;
 
     /**
      * Generate plan using GPT API
@@ -45,21 +49,15 @@ class DietPlanService
     {
         try {
             $user = $dietPlan->user;
-
-            // Gather user data
             $userData = $this->getUserData($user);
+            $durationDays = $dietPlan->duration_days ?? self::DEFAULT_PLAN_DURATION_DAYS;
 
-            // Build prompt
-            $prompt = $this->buildPrompt($userData, $dietPlan);
-
-            // Save the prompt
-            $dietPlan->update(['generation_prompt' => $prompt]);
-
-            // Call GPT API
-            $response = $this->callGPTAPI($prompt);
-
-            // Parse and save the plan
-            $this->savePlanFromAIResponse($dietPlan, $response);
+            // For plans longer than CHUNK_SIZE_DAYS, split into chunks
+            if ($durationDays > self::CHUNK_SIZE_DAYS) {
+                $this->generateWithAIChunked($dietPlan, $userData, $durationDays);
+            } else {
+                $this->generateWithAISingle($dietPlan, $userData, $durationDays);
+            }
 
             // Mark as active
             $dietPlan->markAsActive();
@@ -72,6 +70,97 @@ class DietPlanService
 
             throw $e;
         }
+    }
+
+    /**
+     * Generate plan with a single API call (for short plans)
+     */
+    private function generateWithAISingle(DietPlan $dietPlan, array $userData, int $durationDays): void
+    {
+        $prompt = $this->buildPrompt($userData, $dietPlan, 1, $durationDays);
+        $dietPlan->update(['generation_prompt' => $prompt]);
+
+        $response = $this->callGPTAPI($prompt, $durationDays);
+        $this->savePlanFromAIResponse($dietPlan, $response);
+    }
+
+    /**
+     * Generate plan with multiple API calls (for long plans)
+     */
+    private function generateWithAIChunked(DietPlan $dietPlan, array $userData, int $durationDays): void
+    {
+        $allDailyPlans = [];
+        $summary = '';
+        $prompts = [];
+
+        // Split into chunks
+        $chunks = $this->calculateChunks($durationDays);
+
+        Log::info('Generating chunked diet plan', [
+            'diet_plan_id' => $dietPlan->id,
+            'total_days' => $durationDays,
+            'chunks' => count($chunks),
+        ]);
+
+        foreach ($chunks as $index => $chunk) {
+            $startDay = $chunk['start'];
+            $endDay = $chunk['end'];
+            $chunkDays = $endDay - $startDay + 1;
+
+            Log::info("Processing chunk", [
+                'chunk' => $index + 1,
+                'start_day' => $startDay,
+                'end_day' => $endDay,
+            ]);
+
+            $prompt = $this->buildPrompt($userData, $dietPlan, $startDay, $endDay);
+            $prompts[] = "=== Chunk {$index} (Days {$startDay}-{$endDay}) ===\n{$prompt}";
+
+            $response = $this->callGPTAPI($prompt, $chunkDays);
+
+            // Collect summary from first chunk only
+            if ($index === 0 && isset($response['summary'])) {
+                $summary = $response['summary'];
+            }
+
+            // Merge daily plans
+            if (isset($response['daily_plans']) && is_array($response['daily_plans'])) {
+                foreach ($response['daily_plans'] as $dayPlan) {
+                    $allDailyPlans[] = $dayPlan;
+                }
+            }
+        }
+
+        // Save combined prompts
+        $dietPlan->update(['generation_prompt' => implode("\n\n", $prompts)]);
+
+        // Save combined response
+        $combinedResponse = [
+            'summary' => $summary,
+            'daily_plans' => $allDailyPlans,
+        ];
+
+        $this->savePlanFromAIResponse($dietPlan, $combinedResponse);
+    }
+
+    /**
+     * Calculate chunk ranges for the given duration
+     */
+    private function calculateChunks(int $totalDays): array
+    {
+        $chunks = [];
+        $currentDay = 1;
+
+        while ($currentDay <= $totalDays) {
+            $endDay = min($currentDay + self::CHUNK_SIZE_DAYS - 1, $totalDays);
+            $chunks[] = [
+                'start' => $currentDay,
+                'end' => $endDay,
+            ];
+            $currentDay = $endDay + 1;
+        }
+
+        return $chunks;
     }
 
     /**
@@ -117,21 +206,26 @@ class DietPlanService
     }
 
     /**
-     * Build GPT prompt
+     * Build GPT prompt for a specific day range
      */
-    private function buildPrompt(array $userData, DietPlan $dietPlan): string
+    private function buildPrompt(array $userData, DietPlan $dietPlan, int $startDay = 1, int $endDay = 7): string
     {
-        // Convert arrays to strings for prompt
-        $dislikedFoods = is_array($userData['disliked_foods'])
-            ? implode(', ', $userData['disliked_foods'])
-            : ($userData['disliked_foods'] ?: '없음');
+        // Helper to safely convert any value to string
+        $toString = fn($value, $default = '') => is_array($value)
+            ? implode(', ', array_filter($value))
+            : (string) ($value ?: $default);
 
-        $preferredFoods = is_array($userData['preferred_foods'])
-            ? implode(', ', $userData['preferred_foods'])
-            : ($userData['preferred_foods'] ?: '한식');
+        // Convert arrays to strings for prompt
+        $dislikedFoods = $toString($userData['disliked_foods'], '없음');
+        $preferredFoods = $toString($userData['preferred_foods'], '한식');
+        $dietaryRestrictions = $toString($userData['dietary_restrictions'], '없음');
+        $goal = $toString($userData['goal'], '체중 감량');
+
+        $durationDays = $endDay - $startDay + 1;
+        $startDate = $dietPlan->start_date->copy()->addDays($startDay - 1)->format('Y-m-d');
 
         return <<<PROMPT
-당신은 영양학과 운동 전문가입니다. 다음 사용자 정보를 바탕으로 7일간의 맞춤형 다이어트 플랜을 작성해주세요.
+당신은 영양학과 운동 전문가입니다. 다음 사용자 정보를 바탕으로 {$durationDays}일간의 맞춤형 다이어트 플랜을 작성해주세요.
 
 [사용자 정보]
 - 성별: {$userData['gender']}
@@ -139,15 +233,15 @@ class DietPlanService
 - 현재 체중: {$userData['current_weight']}kg
 - 목표 체중: {$userData['target_weight']}kg
 - 키: {$userData['height']}cm
-- 주요 목표: {$userData['goal']}
-- 목표 기간: {$userData['goal_period']}
+- 주요 목표: {$goal}
+- 목표 기간: {$toString($userData['goal_period'], '8주')}
 - 일일 목표 칼로리: {$userData['target_calories']}kcal
 - 활동량: {$userData['activity_level']}
 - 운동 경험: {$userData['exercise_experience']}
 - 하루 식사 횟수: {$userData['meals_per_day']}
 - 선호 음식: {$preferredFoods}
 - 싫어하는 재료: {$dislikedFoods}
-- 식이 제한: {$userData['dietary_restrictions']}
+- 식이 제한: {$dietaryRestrictions}
 - 조리 가능 여부: {$userData['can_cook']}
 
 [영양소 목표]
@@ -156,9 +250,9 @@ class DietPlanService
 - 지방: {$userData['target_fat_g']}g
 
 [플랜 요구사항]
-1. 7일간의 일별 식단 (아침, 점심, 저녁, 간식)
+1. {$startDay}일차부터 {$endDay}일차까지의 일별 식단 (아침, 점심, 저녁, 간식)
 2. 각 끼니별 음식명, 1인분량(g), 칼로리 및 영양소 (단백질, 탄수화물, 지방)
-3. 주 3-5회 운동 스케줄 (운동명, 시간, 강도, 예상 소모 칼로리)
+3. 운동 스케줄 (운동명, 시간, 강도, 예상 소모 칼로리) - 주 3-5회, 나머지 날은 휴식
 4. 실천 가능한 팁
 5. 사용자의 선호도와 제한사항을 반영한 현실적인 플랜
 
@@ -167,8 +261,8 @@ class DietPlanService
   "summary": "플랜 요약 및 근거 (200자 이내)",
   "daily_plans": [
     {
-      "day": 1,
-      "date": "{$dietPlan->start_date->format('Y-m-d')}",
+      "day": {$startDay},
+      "date": "{$startDate}",
       "meals": {
         "breakfast": [
           {
@@ -192,22 +286,24 @@ class DietPlanService
       },
       "tips": "하루 실천 팁"
     }
-    // ... 2일차부터 7일차까지
   ]
 }
 
 중요:
 - 반드시 위 JSON 형식만 응답하세요
+- daily_plans 배열에 {$startDay}일차부터 {$endDay}일차까지 모든 날짜를 포함해야 합니다
+- day 값은 {$startDay}부터 {$endDay}까지 순차적으로 증가해야 합니다
 - 각 음식의 영양소 정보는 정확해야 합니다
 - 일일 총 칼로리는 목표 칼로리의 ±10% 범위 내로 유지하세요
-- 운동은 주 3-5회만 포함하세요 (나머지 날은 null)
+- 운동 강도(intensity)는 반드시 "낮음", "보통", "높음" 중 하나만 사용하세요
+- 운동은 주 3-5회만 포함하세요 (나머지 날의 exercise는 null)
 PROMPT;
     }
 
     /**
      * Call OpenAI GPT API
      */
-    private function callGPTAPI(string $prompt): array
+    private function callGPTAPI(string $prompt, int $durationDays = 7): array
     {
         $apiKey = config('services.openai.api_key');
 
@@ -215,11 +311,15 @@ PROMPT;
             throw new \Exception('OpenAI API key not configured');
         }
 
+        // Calculate max tokens based on plan duration
+        // Each day needs ~800-1000 tokens for meals + exercise + tips
+        $maxTokens = min(16384, max(8000, $durationDays * 1000));
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $apiKey,
             'Content-Type' => 'application/json',
-        ])->timeout(120)->post(self::OPENAI_API_URL, [
-            'model' => 'gpt-4-turbo-preview',
+        ])->timeout(600)->post(self::OPENAI_API_URL, [
+            'model' => 'gpt-4.1-mini',
             'messages' => [
                 [
                     'role' => 'system',
@@ -232,7 +332,7 @@ PROMPT;
             ],
             'response_format' => ['type' => 'json_object'],
             'temperature' => 0.7,
-            'max_tokens' => 4000,
+            'max_tokens' => $maxTokens,
         ]);
 
         if (!$response->successful()) {
@@ -246,7 +346,70 @@ PROMPT;
             throw new \Exception('No content in GPT response');
         }
 
-        return json_decode($content, true);
+        // Sanitize JSON before parsing (fix common GPT errors like trailing commas)
+
+        Log::info('Raw GPT response content', ['content' => $content]);
+
+        //$content = $this->sanitizeJsonResponse($content);
+
+        $decoded = json_decode($content, true);
+        $jsonError = json_last_error();
+        $jsonErrorMsg = json_last_error_msg();
+
+        if ($decoded === null || $jsonError !== JSON_ERROR_NONE) {
+            Log::error('Failed to parse GPT response as JSON', [
+                'error' => $jsonErrorMsg,
+                'error_code' => $jsonError,
+                'content_length' => strlen($content),
+                'content_preview' => substr($content, 0, 500),
+                'content_tail' => substr($content, -200),
+            ]);
+            throw new \Exception('Invalid JSON in GPT response: ' . $jsonErrorMsg);
+        }
+
+        if (!isset($decoded['daily_plans']) || !is_array($decoded['daily_plans'])) {
+            Log::error('GPT response missing daily_plans array', [
+                'keys' => array_keys($decoded ?? []),
+            ]);
+            throw new \Exception('GPT response missing required daily_plans array');
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Sanitize JSON response to fix common GPT errors
+     */
+    private function sanitizeJsonResponse(string $json): string
+    {
+        // Remove trailing commas before ] or }
+        // This handles cases like: "value",} or "value",]
+        $json = preg_replace('/,\s*([\]}])/s', '$1', $json);
+
+        // Remove JavaScript-style comments that GPT sometimes includes
+        $json = preg_replace('/\/\/[^\n]*\n/', '', $json);
+        $json = preg_replace('/\/\*.*?\*\//s', '', $json);
+
+        // Handle truncated JSON by attempting to close unclosed brackets/braces
+        $openBraces = substr_count($json, '{') - substr_count($json, '}');
+        $openBrackets = substr_count($json, '[') - substr_count($json, ']');
+
+        if ($openBraces > 0 || $openBrackets > 0) {
+            Log::warning('GPT response appears truncated, attempting to close brackets', [
+                'open_braces' => $openBraces,
+                'open_brackets' => $openBrackets,
+            ]);
+
+            // Remove any trailing comma before closing
+            $json = rtrim($json);
+            $json = rtrim($json, ',');
+
+            // Close brackets in LIFO order (this is a simple approach)
+            $json .= str_repeat(']', $openBrackets);
+            $json .= str_repeat('}', $openBraces);
+        }
+
+        return $json;
     }
 
     /**
@@ -272,12 +435,12 @@ PROMPT;
                 $totalFat = 0;
 
                 foreach (['breakfast', 'lunch', 'dinner', 'snack'] as $mealType) {
-                    if (isset($dayData['meals'][$mealType])) {
+                    if (isset($dayData['meals'][$mealType]) && is_array($dayData['meals'][$mealType])) {
                         foreach ($dayData['meals'][$mealType] as $food) {
-                            $totalCalories += $food['calories'];
-                            $totalProtein += $food['protein_g'];
-                            $totalCarbs += $food['carbs_g'];
-                            $totalFat += $food['fat_g'];
+                            $totalCalories += $food['calories'] ?? 0;
+                            $totalProtein += $food['protein_g'] ?? 0;
+                            $totalCarbs += $food['carbs_g'] ?? 0;
+                            $totalFat += $food['fat_g'] ?? 0;
                         }
                     }
                 }
@@ -296,9 +459,14 @@ PROMPT;
 
                 // Save meal items
                 foreach (['breakfast', 'lunch', 'dinner', 'snack'] as $mealType) {
-                    if (isset($dayData['meals'][$mealType])) {
+                    if (isset($dayData['meals'][$mealType]) && is_array($dayData['meals'][$mealType])) {
                         $order = 0;
                         foreach ($dayData['meals'][$mealType] as $foodData) {
+                            // Skip if food_name is missing
+                            if (empty($foodData['food_name'])) {
+                                continue;
+                            }
+
                             // Try to find matching food in database
                             $food = Food::where('name', $foodData['food_name'])->first();
 
@@ -307,11 +475,11 @@ PROMPT;
                                 'meal_type' => $mealType,
                                 'food_id' => $food?->id,
                                 'food_name' => $foodData['food_name'],
-                                'serving_size' => $foodData['serving_size'],
-                                'calories' => $foodData['calories'],
-                                'protein_g' => $foodData['protein_g'],
-                                'carbs_g' => $foodData['carbs_g'],
-                                'fat_g' => $foodData['fat_g'],
+                                'serving_size' => $foodData['serving_size'] ?? 100,
+                                'calories' => $foodData['calories'] ?? 0,
+                                'protein_g' => $foodData['protein_g'] ?? 0,
+                                'carbs_g' => $foodData['carbs_g'] ?? 0,
+                                'fat_g' => $foodData['fat_g'] ?? 0,
                                 'order' => $order++,
                             ]);
                         }
@@ -319,11 +487,20 @@ PROMPT;
                 }
 
                 // Save exercise plan (if exists)
-                if (isset($dayData['exercise']) && $dayData['exercise']) {
+                if (isset($dayData['exercise']) && is_array($dayData['exercise']) && !empty($dayData['exercise']['exercise_name'])) {
                     $exerciseData = $dayData['exercise'];
 
                     // Try to find matching exercise
                     $exercise = Exercise::where('name', $exerciseData['exercise_name'])->first();
+
+                    // Map intensity to valid enum values: 낮음, 보통, 높음
+                    $intensityMap = [
+                        '낮음' => '낮음', '저' => '낮음', '낮은' => '낮음', 'low' => '낮음',
+                        '보통' => '보통', '중' => '보통', '중간' => '보통', 'medium' => '보통', 'moderate' => '보통',
+                        '높음' => '높음', '고' => '높음', '높은' => '높음', 'high' => '높음',
+                    ];
+                    $rawIntensity = $exerciseData['intensity'] ?? '보통';
+                    $intensity = $intensityMap[$rawIntensity] ?? '보통';
 
                     DailyExercisePlan::create([
                         'diet_plan_id' => $dietPlan->id,
@@ -331,9 +508,9 @@ PROMPT;
                         'date' => $date,
                         'exercise_id' => $exercise?->id,
                         'exercise_name' => $exerciseData['exercise_name'],
-                        'duration_minutes' => $exerciseData['duration_minutes'],
-                        'estimated_calories_burned' => $exerciseData['calories_burned'],
-                        'intensity' => $exerciseData['intensity'] ?? '보통',
+                        'duration_minutes' => $exerciseData['duration_minutes'] ?? 30,
+                        'estimated_calories_burned' => $exerciseData['calories_burned'] ?? 0,
+                        'intensity' => $intensity,
                     ]);
                 }
             }
@@ -408,8 +585,12 @@ PROMPT;
         // Archive old plan
         $dietPlan->archive();
 
-        // Create new plan
-        return $this->generatePlan($dietPlan->user, $dietPlan->survey_response_id);
+        // Create new plan with same duration
+        return $this->generatePlan(
+            $dietPlan->user,
+            $dietPlan->survey_response_id,
+            $dietPlan->duration_days ?? self::DEFAULT_PLAN_DURATION_DAYS
+        );
     }
 
     /**

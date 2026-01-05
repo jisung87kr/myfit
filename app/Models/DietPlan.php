@@ -17,6 +17,7 @@ class DietPlan extends Model
         'status',
         'start_date',
         'end_date',
+        'duration_days',
         'target_calories_per_day',
         'ai_summary',
         'generation_prompt',

@@ -39,6 +39,9 @@ RUN docker-php-ext-install \
 RUN pecl install redis \
     && docker-php-ext-enable redis
 
+# Copy PHP configuration
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 

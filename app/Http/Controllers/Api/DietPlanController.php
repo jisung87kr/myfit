@@ -24,6 +24,7 @@ class DietPlanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'survey_response_id' => 'nullable|exists:user_survey_responses,id',
+            'duration_days' => 'nullable|integer|in:7,14,30',
         ]);
 
         if ($validator->fails()) {
@@ -48,7 +49,8 @@ class DietPlanController extends Controller
         // Create initial plan
         $dietPlan = $this->dietPlanService->generatePlan(
             $user,
-            $request->survey_response_id
+            $request->survey_response_id,
+            $request->duration_days ?? 7
         );
 
         try {
@@ -186,8 +188,9 @@ class DietPlanController extends Controller
         }
 
         // Validate day number
-        if ($day < 1 || $day > 7) {
-            return response()->error('Invalid day number. Must be between 1 and 7.', null, 400);
+        $maxDays = $dietPlan->duration_days ?? 7;
+        if ($day < 1 || $day > $maxDays) {
+            return response()->error("Invalid day number. Must be between 1 and {$maxDays}.", null, 400);
         }
 
         $dayPlan = $this->dietPlanService->getDayPlan($dietPlan, $day);
