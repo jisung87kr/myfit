@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Web\SurveyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -44,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/survey', function () {
         return view('survey.index');
     })->name('survey.index');
+    Route::post('/survey/complete', [SurveyController::class, 'complete'])->name('survey.complete');
 
     // Tools
     Route::prefix('tools')->name('tools.')->group(function () {

@@ -4,6 +4,24 @@
 
 @section('content')
 <div id="diet-plan-list-app" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Survey Reminder Banner -->
+    <div v-if="!loading && surveyStatus.has_survey && !surveyStatus.is_completed" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 animate-fade-in-up">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p class="font-bold text-amber-800">맞춤 식단 생성을 위한 설문이 필요합니다</p>
+                <p class="text-sm text-amber-600">설문을 완료하시면 AI가 당신에게 딱 맞는 식단을 만들어 드립니다.</p>
+            </div>
+            <a href="/survey" class="px-4 py-2 bg-amber-500 text-white font-bold text-sm rounded-xl hover:bg-amber-600 transition-colors flex-shrink-0">
+                설문 시작하기
+            </a>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-fade-in-up">
         <div>
@@ -11,9 +29,10 @@
             <p class="text-gray-500">AI가 생성한 맞춤 식단 플랜을 관리하세요.</p>
         </div>
         <div>
-            <button @click="showGenerateModal = true" class="px-5 py-2.5 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg shadow-gray-900/20 flex items-center cursor-pointer">
+            <button @click="openGenerateModal" class="px-5 py-2.5 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg shadow-gray-900/20 flex items-center cursor-pointer">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                새 플랜 생성
+                <span v-if="surveyStatus.is_completed">새 플랜 생성</span>
+                <span v-else>설문 완료하기</span>
             </button>
         </div>
     </header>
@@ -33,8 +52,9 @@
         </div>
         <h3 class="text-xl font-bold text-gray-900 mb-2 font-heading">아직 식단 플랜이 없습니다</h3>
         <p class="text-gray-500 mb-8 max-w-sm mx-auto">AI가 당신의 목표와 신체 정보에 맞춰 최적의 식단을 생성해드립니다.</p>
-        <button @click="showGenerateModal = true" class="px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 cursor-pointer">
-            맞춤 식단 생성하기
+        <button @click="openGenerateModal" class="px-6 py-3 bg-gradient-to-r from-primary-500 to-purple-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 cursor-pointer">
+            <span v-if="surveyStatus.is_completed">맞춤 식단 생성하기</span>
+            <span v-else>설문 완료 후 시작하기</span>
         </button>
     </div>
 
@@ -77,7 +97,7 @@
             </div>
             <!-- Progress Bar for Active Plans -->
             <div v-if="plan.status === 'active'" class="h-1 bg-gray-100">
-                <div class="h-full bg-gradient-to-r from-primary-500 to-accent-500" :style="{ width: getProgressPercent(plan) + '%' }"></div>
+                <div class="h-full bg-gradient-to-r from-primary-500 to-purple-500" :style="{ width: getProgressPercent(plan) + '%' }"></div>
             </div>
         </div>
     </div>
@@ -182,6 +202,11 @@ Vue.createApp({
             errorMessage: '',
             generateForm: {
                 duration_days: 7
+            },
+            surveyStatus: {
+                has_survey: false,
+                is_completed: false,
+                survey_id: null
             }
         }
     },
@@ -195,12 +220,21 @@ Vue.createApp({
                 const response = await axios.get('/api/diet-plans');
                 if (response.data.data) {
                     this.dietPlans = response.data.data.diet_plans || [];
+                    this.surveyStatus = response.data.data.survey_status || this.surveyStatus;
                 }
             } catch (error) {
                 console.error('Failed to load diet plans:', error);
             } finally {
                 this.loading = false;
             }
+        },
+        openGenerateModal() {
+            if (!this.surveyStatus.is_completed) {
+                if (window.showToast) window.showToast('식단 플랜을 생성하려면 먼저 설문을 완료해주세요.', 'warning');
+                window.location.href = '/survey';
+                return;
+            }
+            this.showGenerateModal = true;
         },
         async generateDietPlan() {
             this.generating = true;

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\DailyExercisePlan;
 use App\Models\DietPlan;
 use App\Models\MealPlanItem;
+use App\Models\Survey;
+use App\Models\SurveySubmission;
 use App\Services\DietPlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,10 +43,41 @@ class DietPlanController extends Controller
                 ];
             });
 
+        // Check survey completion status
+        $surveyStatus = $this->getSurveyCompletionStatus($user);
+
         return response()->success([
             'diet_plans' => $plans,
             'total' => $plans->count(),
+            'survey_status' => $surveyStatus,
         ], 'Diet plans retrieved');
+    }
+
+    /**
+     * Get survey completion status for user
+     */
+    private function getSurveyCompletionStatus($user): array
+    {
+        $survey = Survey::where('is_active', true)->first();
+
+        if (!$survey) {
+            return [
+                'has_survey' => false,
+                'is_completed' => false,
+                'survey_id' => null,
+            ];
+        }
+
+        $submission = SurveySubmission::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->first();
+
+        return [
+            'has_survey' => true,
+            'is_completed' => $submission !== null,
+            'survey_id' => $survey->id,
+            'submission_id' => $submission?->id,
+        ];
     }
 
     /**
@@ -53,7 +86,6 @@ class DietPlanController extends Controller
     public function generate(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'survey_response_id' => 'nullable|exists:user_survey_responses,id',
             'duration_days' => 'nullable|integer|in:7,14,30',
         ]);
 
@@ -63,10 +95,32 @@ class DietPlanController extends Controller
 
         $user = $request->user();
 
+        // Check if user has completed the survey
+        $survey = Survey::where('is_active', true)->first();
+
+        if (!$survey) {
+            return response()->error('활성화된 설문이 없습니다.', null, 400);
+        }
+
+        $submission = SurveySubmission::where('user_id', $user->id)
+            ->where('survey_id', $survey->id)
+            ->first();
+
+        if (!$submission) {
+            return response()->error(
+                '식단 플랜을 생성하려면 먼저 설문을 완료해야 합니다.',
+                ['survey_id' => $survey->id],
+                400
+            );
+        }
+
+        // Get the latest survey response ID for this user
+        $surveyResponse = $user->surveyResponses()->latest()->first();
+
         // Create initial plan
         $dietPlan = $this->dietPlanService->generatePlan(
             $user,
-            $request->survey_response_id,
+            $surveyResponse?->id,
             $request->duration_days ?? 7
         );
 
