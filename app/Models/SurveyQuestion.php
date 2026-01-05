@@ -7,7 +7,6 @@ use App\Enums\SurveyStep;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SurveyQuestion extends Model
 {
@@ -36,14 +35,6 @@ class SurveyQuestion extends Model
     public function survey(): BelongsTo
     {
         return $this->belongsTo(Survey::class);
-    }
-
-    /**
-     * 이 질문에 대한 모든 사용자 응답
-     */
-    public function responses(): HasMany
-    {
-        return $this->hasMany(UserSurveyResponse::class);
     }
 
     /**
@@ -104,17 +95,5 @@ class SurveyQuestion extends Model
         }
 
         return true;
-    }
-
-    /**
-     * 특정 사용자의 이 질문에 대한 답변 조회
-     */
-    public function getAnswerByUser(User $user)
-    {
-        $response = $this->responses()
-            ->where('user_id', $user->id)
-            ->first();
-
-        return $response ? $response->answer : null;
     }
 }

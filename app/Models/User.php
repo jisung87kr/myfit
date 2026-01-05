@@ -63,11 +63,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the survey responses for the user.
+     * Get the survey submissions for the user.
      */
-    public function surveyResponses()
+    public function surveySubmissions()
     {
-        return $this->hasMany(UserSurveyResponse::class);
+        return $this->hasMany(SurveySubmission::class);
     }
 
     /**

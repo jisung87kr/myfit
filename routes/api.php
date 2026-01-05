@@ -66,16 +66,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('surveys')->group(function () {
         Route::get('/', [SurveyController::class, 'index']);
         Route::get('/{survey}/questions', [SurveyController::class, 'getQuestions']);
-        Route::post('/{survey}/answers', [SurveyController::class, 'submitAnswers']);
         Route::get('/{survey}/responses', [SurveyController::class, 'getResponses']);
-        Route::get('/{survey}/progress', [SurveyController::class, 'getProgress']);
         Route::get('/{survey}/summary', [SurveyController::class, 'getSummary']);
         Route::get('/{survey}/status', [SurveyController::class, 'getStatus']);
-        Route::delete('/{survey}/answers/{question}', [SurveyController::class, 'deleteAnswer']);
         Route::delete('/{survey}/reset', [SurveyController::class, 'resetSurvey']);
-        Route::delete('/{survey}/steps/{step}', [SurveyController::class, 'deleteStepResponses']);
-
-        // Survey Submission
         Route::post('/{survey}/submit', [SurveyController::class, 'submit']);
         Route::get('/{survey}/submission', [SurveyController::class, 'getSubmission']);
     });

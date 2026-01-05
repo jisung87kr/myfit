@@ -173,15 +173,9 @@ class DietPlanService
             ->latest('calculated_at')
             ->first();
 
-        // Get survey responses
-        $surveyResponse = $user->surveyResponses()->latest()->first();
-
-        $responses = [];
-        if ($surveyResponse) {
-            foreach ($surveyResponse->answers as $answer) {
-                $responses[$answer->question->question_text] = $answer->answer_value;
-            }
-        }
+        // Get survey submission data
+        $submission = $user->surveySubmissions()->latest()->first();
+        $responses = $submission?->completion_data ?? [];
 
         return [
             'gender' => $responses['성별'] ?? '알 수 없음',

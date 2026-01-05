@@ -71,68 +71,48 @@ class SurveyController extends Controller
     }
 
     /**
-     * 답변 제출
+     * 설문 제출 (모든 답변을 한 번에 제출)
      *
-     * POST /api/surveys/{survey}/answers
-     * Body: { "answers": { "1": "답변1", "2": "답변2" } }
+     * POST /api/surveys/{survey}/submit
+     * Body: { "answers": { "질문텍스트": "답변", ... } }
      */
-    public function submitAnswers(Request $request, Survey $survey): JsonResponse
+    public function submit(Request $request, Survey $survey): JsonResponse
     {
         $validated = $request->validate([
-            'answers' => 'required|array|min:1',
-            'answers.*' => 'required',
+            'answers' => 'required|array',
         ]);
 
         try {
-            $result = $this->surveyService->submitAnswers(
+            $result = $this->surveyService->submitSurvey(
                 $request->user(),
                 $survey,
                 $validated['answers']
             );
 
-            return response()->success($result, '답변이 저장되었습니다.');
+            return response()->success($result, $result['message']);
         } catch (ValidationException $e) {
-            return response()->validationError($e->errors(), $e->getMessage());
+            return response()->validationError(
+                $e->errors(),
+                $e->getMessage()
+            );
         }
     }
 
     /**
      * 사용자의 설문 응답 조회
      *
-     * GET /api/surveys/{survey}/responses?step=1
+     * GET /api/surveys/{survey}/responses
      */
     public function getResponses(Request $request, Survey $survey): JsonResponse
     {
-        $validated = $request->validate([
-            'step' => 'nullable|integer|min:1|max:5',
-        ]);
-
-        $step = isset($validated['step']) ? (int) $validated['step'] : null;
-
         $responses = $this->surveyService->getUserResponses(
             $request->user(),
-            $survey,
-            $step
+            $survey
         );
 
         return response()->success([
             'responses' => $responses,
         ]);
-    }
-
-    /**
-     * 사용자의 설문 진행률 조회
-     *
-     * GET /api/surveys/{survey}/progress
-     */
-    public function getProgress(Request $request, Survey $survey): JsonResponse
-    {
-        $progress = $this->surveyService->getUserProgress(
-            $request->user(),
-            $survey
-        );
-
-        return response()->success($progress);
     }
 
     /**
@@ -151,40 +131,20 @@ class SurveyController extends Controller
     }
 
     /**
-     * 특정 질문의 답변 삭제
-     *
-     * DELETE /api/surveys/{survey}/answers/{question}
-     */
-    public function deleteAnswer(Request $request, Survey $survey, int $questionId): JsonResponse
-    {
-        $deleted = $this->surveyService->deleteAnswer(
-            $request->user(),
-            $survey,
-            $questionId
-        );
-
-        if (!$deleted) {
-            return response()->notFound('삭제할 답변이 없습니다.');
-        }
-
-        return response()->success(null, '답변이 삭제되었습니다.');
-    }
-
-    /**
      * 설문 전체 응답 초기화
      *
      * DELETE /api/surveys/{survey}/reset
      */
     public function resetSurvey(Request $request, Survey $survey): JsonResponse
     {
-        $deletedCount = $this->surveyService->resetSurvey(
+        $deleted = $this->surveyService->resetSurvey(
             $request->user(),
             $survey
         );
 
         return response()->success([
-            'deleted_count' => $deletedCount,
-        ], '설문이 초기화되었습니다.');
+            'deleted' => $deleted,
+        ], $deleted ? '설문이 초기화되었습니다.' : '삭제할 설문이 없습니다.');
     }
 
     /**
@@ -200,60 +160,6 @@ class SurveyController extends Controller
         );
 
         return response()->success($status);
-    }
-
-    /**
-     * 특정 단계의 응답 삭제
-     *
-     * DELETE /api/surveys/{survey}/steps/{step}
-     */
-    public function deleteStepResponses(Request $request, Survey $survey, int $step): JsonResponse
-    {
-        $validated = $request->validate([
-            'confirm' => 'required|boolean|accepted',
-        ]);
-
-        $surveyStep = SurveyStep::tryFrom($step);
-
-        if (!$surveyStep) {
-            return response()->validationError(
-                ['step' => '유효하지 않은 단계입니다.'],
-                '유효하지 않은 단계입니다.'
-            );
-        }
-
-        $deletedCount = $this->surveyService->deleteStepResponses(
-            $request->user(),
-            $survey,
-            $surveyStep
-        );
-
-        return response()->success([
-            'step' => $step,
-            'deleted_count' => $deletedCount,
-        ], "{$surveyStep->displayName()} 단계의 답변이 삭제되었습니다.");
-    }
-
-    /**
-     * 설문 최종 제출
-     *
-     * POST /api/surveys/{survey}/submit
-     */
-    public function submit(Request $request, Survey $survey): JsonResponse
-    {
-        try {
-            $result = $this->surveyService->submitSurvey(
-                $request->user(),
-                $survey
-            );
-
-            return response()->success($result, $result['message']);
-        } catch (ValidationException $e) {
-            return response()->validationError(
-                $e->errors(),
-                $e->getMessage()
-            );
-        }
     }
 
     /**

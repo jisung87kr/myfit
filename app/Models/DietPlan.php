@@ -38,11 +38,11 @@ class DietPlan extends Model
     }
 
     /**
-     * Get the survey response for this plan
+     * Get the survey submission for this plan
      */
-    public function surveyResponse(): BelongsTo
+    public function surveySubmission(): BelongsTo
     {
-        return $this->belongsTo(UserSurveyResponse::class, 'survey_response_id');
+        return $this->belongsTo(SurveySubmission::class, 'survey_response_id');
     }
 
     /**

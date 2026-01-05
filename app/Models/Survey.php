@@ -29,11 +29,11 @@ class Survey extends Model
     }
 
     /**
-     * 설문에 대한 모든 사용자 응답
+     * 설문 제출 기록
      */
-    public function responses(): HasMany
+    public function submissions(): HasMany
     {
-        return $this->hasMany(UserSurveyResponse::class);
+        return $this->hasMany(SurveySubmission::class);
     }
 
     /**
@@ -65,30 +65,8 @@ class Survey extends Model
      */
     public function isCompletedBy(User $user): bool
     {
-        $totalQuestions = $this->total_questions;
-        $answeredQuestions = $this->responses()
+        return $this->submissions()
             ->where('user_id', $user->id)
-            ->distinct('survey_question_id')
-            ->count();
-
-        return $totalQuestions > 0 && $answeredQuestions === $totalQuestions;
-    }
-
-    /**
-     * 특정 사용자의 응답 진행률 (0-100)
-     */
-    public function getProgressByUser(User $user): int
-    {
-        $totalQuestions = $this->total_questions;
-        if ($totalQuestions === 0) {
-            return 0;
-        }
-
-        $answeredQuestions = $this->responses()
-            ->where('user_id', $user->id)
-            ->distinct('survey_question_id')
-            ->count();
-
-        return (int) (($answeredQuestions / $totalQuestions) * 100);
+            ->exists();
     }
 }

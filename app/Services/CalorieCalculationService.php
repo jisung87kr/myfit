@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\SurveySubmission;
 use App\Models\User;
 use App\Models\UserCalculation;
-use App\Models\UserSurveyResponse;
 use Illuminate\Validation\ValidationException;
 
 class CalorieCalculationService
@@ -193,50 +193,45 @@ class CalorieCalculationService
      */
     private function getUserSurveyData(User $user): array
     {
-        $responses = UserSurveyResponse::where('user_id', $user->id)
-            ->with('question')
-            ->get();
+        $submission = SurveySubmission::where('user_id', $user->id)
+            ->latest()
+            ->first();
 
+        if (!$submission) {
+            return [];
+        }
+
+        $responses = $submission->completion_data ?? [];
         $data = [];
 
-        foreach ($responses as $response) {
-            $questionText = $response->question->question_text;
-            $answer = $response->answer['value'] ?? null;
+        // 성별
+        if (isset($responses['성별'])) {
+            $data['gender'] = $responses['성별'];
+        }
 
-            // 성별
-            if (str_contains($questionText, '성별')) {
-                $data['gender'] = $answer;
-            }
+        // 나이
+        if (isset($responses['나이'])) {
+            $data['age'] = (int) $responses['나이'];
+        }
 
-            // 나이 (생년월일로부터 계산 또는 직접 나이)
-            if (str_contains($questionText, '생년월일') || str_contains($questionText, '나이')) {
-                if (is_numeric($answer) && $answer > 1900) {
-                    // 생년월일인 경우
-                    $data['age'] = now()->year - $answer;
-                } else {
-                    $data['age'] = (int) $answer;
-                }
-            }
+        // 체중
+        if (isset($responses['현재 체중 (kg)'])) {
+            $data['weight'] = (float) $responses['현재 체중 (kg)'];
+        }
 
-            // 체중
-            if (str_contains($questionText, '현재 체중') || str_contains($questionText, '체중')) {
-                $data['weight'] = (float) $answer;
-            }
+        // 신장
+        if (isset($responses['키 (cm)'])) {
+            $data['height'] = (float) $responses['키 (cm)'];
+        }
 
-            // 신장
-            if (str_contains($questionText, '신장') || str_contains($questionText, '키')) {
-                $data['height'] = (float) $answer;
-            }
+        // 활동량
+        if (isset($responses['일일 활동량'])) {
+            $data['activity_level'] = $this->mapActivityLevel($responses['일일 활동량']);
+        }
 
-            // 활동량
-            if (str_contains($questionText, '활동량') || str_contains($questionText, '활동 수준')) {
-                $data['activity_level'] = $this->mapActivityLevel($answer);
-            }
-
-            // 목표
-            if (str_contains($questionText, '주요 목표') || str_contains($questionText, '다이어트 목표')) {
-                $data['goal'] = $this->mapGoal($answer);
-            }
+        // 목표
+        if (isset($responses['주요 목표'])) {
+            $data['goal'] = $this->mapGoal($responses['주요 목표']);
         }
 
         return $data;
