@@ -18,7 +18,37 @@ class DietPlanController extends Controller
     ) {}
 
     /**
-     * Generate a new diet plan (async)
+     * List all diet plans for the user
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $plans = DietPlan::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($plan) {
+                return [
+                    'id' => $plan->id,
+                    'status' => $plan->status,
+                    'duration_days' => $plan->duration_days,
+                    'start_date' => $plan->start_date,
+                    'end_date' => $plan->end_date,
+                    'target_calories_per_day' => $plan->target_calories_per_day,
+                    'ai_summary' => $plan->ai_summary,
+                    'created_at' => $plan->created_at,
+                    'updated_at' => $plan->updated_at,
+                ];
+            });
+
+        return response()->success([
+            'diet_plans' => $plans,
+            'total' => $plans->count(),
+        ], 'Diet plans retrieved');
+    }
+
+    /**
+     * Generate a new diet plan
      */
     public function generate(Request $request): JsonResponse
     {
@@ -32,19 +62,6 @@ class DietPlanController extends Controller
         }
 
         $user = $request->user();
-
-        // Check if user already has an active plan
-        $existingPlan = DietPlan::where('user_id', $user->id)
-            ->where('status', 'active')
-            ->first();
-
-        if ($existingPlan) {
-            return response()->error(
-                'You already have an active diet plan. Please complete or archive it before generating a new one.',
-                null,
-                409
-            );
-        }
 
         // Create initial plan
         $dietPlan = $this->dietPlanService->generatePlan(
@@ -68,6 +85,33 @@ class DietPlanController extends Controller
             $dietPlan->markAsFailed();
             return response()->error('Failed to generate diet plan: ' . $e->getMessage(), null, 500);
         }
+    }
+
+    /**
+     * Delete a diet plan
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $dietPlan = DietPlan::find($id);
+
+        if (!$dietPlan) {
+            return response()->notFound('Diet plan not found');
+        }
+
+        // Check authorization
+        if ($dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this diet plan');
+        }
+
+        // Delete related records (cascade should handle this, but being explicit)
+        $dietPlan->dailyMealPlans()->each(function ($mealPlan) {
+            $mealPlan->mealItems()->delete();
+            $mealPlan->delete();
+        });
+        $dietPlan->dailyExercisePlans()->delete();
+        $dietPlan->delete();
+
+        return response()->success(null, 'Diet plan deleted successfully');
     }
 
     /**
@@ -162,12 +206,38 @@ class DietPlanController extends Controller
         return response()->success([
             'id' => $dietPlan->id,
             'status' => $dietPlan->status,
+            'duration_days' => $dietPlan->duration_days,
             'start_date' => $dietPlan->start_date,
             'end_date' => $dietPlan->end_date,
             'target_calories_per_day' => $dietPlan->target_calories_per_day,
             'ai_summary' => $dietPlan->ai_summary,
-            'daily_meal_plans' => $dietPlan->dailyMealPlans,
-            'daily_exercise_plans' => $dietPlan->dailyExercisePlans,
+            'daily_meal_plans' => $dietPlan->dailyMealPlans->map(function ($mealPlan) {
+                return [
+                    'day_number' => $mealPlan->day_number,
+                    'date' => $mealPlan->date,
+                    'total_calories' => $mealPlan->total_calories,
+                    'total_protein_g' => $mealPlan->total_protein_g,
+                    'total_carbs_g' => $mealPlan->total_carbs_g,
+                    'total_fat_g' => $mealPlan->total_fat_g,
+                    'tips' => $mealPlan->tips,
+                    'meals' => $this->groupMealsByType($mealPlan->mealItems),
+                ];
+            }),
+            'daily_exercise_plans' => $dietPlan->dailyExercisePlans->groupBy('day_number')->map(function ($exercises, $day) {
+                return [
+                    'day_number' => $day,
+                    'exercises' => $exercises->map(function ($exercise) {
+                        return [
+                            'id' => $exercise->id,
+                            'exercise_name' => $exercise->exercise_name,
+                            'duration_minutes' => $exercise->duration_minutes,
+                            'estimated_calories_burned' => $exercise->estimated_calories_burned,
+                            'intensity' => $exercise->intensity,
+                            'notes' => $exercise->notes,
+                        ];
+                    })->values(),
+                ];
+            })->values(),
         ], 'Diet plan retrieved');
     }
 

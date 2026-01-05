@@ -113,10 +113,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Diet Plans
     Route::prefix('diet-plans')->group(function () {
+        Route::get('/', [DietPlanController::class, 'index']);
         Route::post('/generate', [DietPlanController::class, 'generate']);
         Route::get('/generation-status/{id}', [DietPlanController::class, 'generationStatus']);
         Route::get('/active', [DietPlanController::class, 'getActive']);
         Route::get('/{id}', [DietPlanController::class, 'show']);
+        Route::delete('/{id}', [DietPlanController::class, 'destroy']);
         Route::get('/{id}/day/{day}', [DietPlanController::class, 'showDay']);
         Route::post('/{id}/regenerate', [DietPlanController::class, 'regenerate']);
 

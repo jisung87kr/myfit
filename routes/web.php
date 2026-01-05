@@ -86,6 +86,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/', function () {
             return view('diet-plan.index');
         })->name('index');
+
+        Route::get('/{id}', function ($id) {
+            return view('diet-plan.show', ['planId' => $id]);
+        })->name('show');
     });
 
     // Summary
