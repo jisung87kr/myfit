@@ -48,8 +48,7 @@ class DietPlanService
     public function generateWithAI(DietPlan $dietPlan): void
     {
         try {
-            $user = $dietPlan->user;
-            $userData = $this->getUserData($user);
+            $userData = $this->getUserData($dietPlan);
             $durationDays = $dietPlan->duration_days ?? self::DEFAULT_PLAN_DURATION_DAYS;
 
             // For plans longer than CHUNK_SIZE_DAYS, split into chunks
@@ -164,17 +163,19 @@ class DietPlanService
     }
 
     /**
-     * Get user data from survey and calculations
+     * Get user data from survey submission linked to diet plan
      */
-    private function getUserData(User $user): array
+    private function getUserData(DietPlan $dietPlan): array
     {
+        $user = $dietPlan->user;
+
         // Get latest calculation
         $calculation = UserCalculation::where('user_id', $user->id)
             ->latest('calculated_at')
             ->first();
 
-        // Get survey submission data
-        $submission = $user->surveySubmissions()->latest()->first();
+        // Get survey submission data from diet plan's linked submission
+        $submission = $dietPlan->surveySubmission;
         $responses = $submission?->completion_data ?? [];
 
         return [
