@@ -167,23 +167,12 @@ class DietPlanService
      */
     private function getUserData(DietPlan $dietPlan): array
     {
-        $user = $dietPlan->user;
-
-        // Get latest calculation
-        $calculation = UserCalculation::where('user_id', $user->id)
-            ->latest('calculated_at')
-            ->first();
-
         // Get survey submission data from diet plan's linked submission
         $submission = $dietPlan->surveySubmission;
         $surveyResponses = $submission?->completion_data ?? [];
 
         return [
             'survey_responses' => $surveyResponses,
-            'target_calories' => $calculation?->target_calories ?? 1500,
-            'target_protein_g' => $calculation?->target_protein_g ?? 112,
-            'target_carbs_g' => $calculation?->target_carbs_g ?? 150,
-            'target_fat_g' => $calculation?->target_fat_g ?? 50,
         ];
     }
 
@@ -205,16 +194,15 @@ class DietPlanService
         $surveySection = $this->buildSurveySection($surveyResponses, $toString);
 
         return <<<PROMPT
-당신은 영양학과 운동 전문가입니다. 다음 사용자 정보를 바탕으로 {$durationDays}일간의 맞춤형 다이어트 플랜을 작성해주세요.
+당신은 영양학과 운동 전문가입니다. 다음 사용자 설문 응답을 분석하여 {$durationDays}일간의 맞춤형 다이어트 플랜을 작성해주세요.
 
 [사용자 설문 응답]
 {$surveySection}
-- 일일 목표 칼로리: {$userData['target_calories']}kcal
 
-[영양소 목표]
-- 탄수화물: {$userData['target_carbs_g']}g
-- 단백질: {$userData['target_protein_g']}g
-- 지방: {$userData['target_fat_g']}g
+[플랜 생성 지침]
+1. 위 설문 응답을 바탕으로 사용자에게 적합한 일일 목표 칼로리와 영양소 비율을 도출하세요
+2. BMR(기초대사량)과 활동량을 고려하여 현실적인 목표를 설정하세요
+3. 사용자의 목표(체중 감량/증량/유지)에 맞는 칼로리 적자/잉여를 반영하세요
 
 [플랜 요구사항]
 1. {$startDay}일차부터 {$endDay}일차까지의 일별 식단 (아침, 점심, 저녁, 간식)
@@ -226,6 +214,10 @@ class DietPlanService
 [응답 형식: 반드시 아래 JSON 형식으로만 응답하세요]
 {
   "summary": "플랜 요약 및 근거 (200자 이내)",
+  "target_calories": 1500,
+  "target_protein_g": 112,
+  "target_carbs_g": 150,
+  "target_fat_g": 50,
   "daily_plans": [
     {
       "day": {$startDay},
@@ -258,10 +250,11 @@ class DietPlanService
 
 중요:
 - 반드시 위 JSON 형식만 응답하세요
+- target_calories, target_protein_g, target_carbs_g, target_fat_g는 설문 응답을 분석하여 적절한 값을 도출하세요
 - daily_plans 배열에 {$startDay}일차부터 {$endDay}일차까지 모든 날짜를 포함해야 합니다
 - day 값은 {$startDay}부터 {$endDay}까지 순차적으로 증가해야 합니다
 - 각 음식의 영양소 정보는 정확해야 합니다
-- 일일 총 칼로리는 목표 칼로리의 ±10% 범위 내로 유지하세요
+- 일일 총 칼로리는 도출한 목표 칼로리의 ±10% 범위 내로 유지하세요
 - 운동 강도(intensity)는 반드시 "낮음", "보통", "높음" 중 하나만 사용하세요
 - 운동은 주 3-5회만 포함하세요 (나머지 날의 exercise는 null)
 PROMPT;
