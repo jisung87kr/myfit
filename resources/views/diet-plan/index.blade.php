@@ -58,18 +58,29 @@
 
     <!-- Plan List -->
     <div v-else class="space-y-4 animate-fade-in-up">
-        <div v-for="plan in dietPlans" :key="plan.id" class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all overflow-hidden">
+        <div v-for="plan in dietPlans" :key="plan.id" :class="['bg-white rounded-2xl border shadow-sm transition-all overflow-hidden', plan.status === 'generating' ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100 hover:shadow-md hover:border-primary-200']">
             <div class="p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <!-- Plan Info -->
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-2">
+                            <!-- Generating Spinner -->
+                            <div v-if="plan.status === 'generating'" class="w-6 h-6 flex-shrink-0">
+                                <div class="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
                             <h3 class="text-lg font-bold text-gray-900">@{{ plan.duration_days }}일 식단 플랜</h3>
                             <span :class="['px-2.5 py-1 text-xs font-bold rounded-lg', getStatusClass(plan.status)]">
                                 @{{ getStatusLabel(plan.status) }}
                             </span>
                         </div>
-                        <p class="text-sm text-gray-500 mb-3 flex items-center gap-4">
+                        <!-- Generating Message -->
+                        <div v-if="plan.status === 'generating'" class="flex items-center gap-2 text-amber-700 text-sm mb-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>AI가 맞춤 식단을 생성하고 있습니다. 잠시만 기다려주세요...</span>
+                        </div>
+                        <p v-else class="text-sm text-gray-500 mb-3 flex items-center gap-4">
                             <span class="flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 @{{ formatDate(plan.start_date) }} ~ @{{ formatDate(plan.end_date) }}
@@ -79,23 +90,34 @@
                                 @{{ Math.round(plan.target_calories_per_day) }} kcal/일
                             </span>
                         </p>
-                        <p v-if="plan.ai_summary" class="text-sm text-gray-600 line-clamp-2">@{{ plan.ai_summary }}</p>
+                        <p v-if="plan.ai_summary && plan.status !== 'generating'" class="text-sm text-gray-600 line-clamp-2">@{{ plan.ai_summary }}</p>
                     </div>
 
                     <!-- Actions -->
                     <div class="flex items-center gap-2">
-                        <a :href="'/diet-plan/' + plan.id" class="px-4 py-2 bg-primary-50 text-primary-700 font-bold text-sm rounded-xl hover:bg-primary-100 transition-colors">
-                            상세보기
-                        </a>
-                        <button @click="confirmDelete(plan)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
+                        <template v-if="plan.status === 'generating'">
+                            <span class="px-4 py-2 bg-amber-100 text-amber-600 font-bold text-sm rounded-xl">
+                                생성중...
+                            </span>
+                        </template>
+                        <template v-else>
+                            <a :href="'/diet-plan/' + plan.id" class="px-4 py-2 bg-primary-50 text-primary-700 font-bold text-sm rounded-xl hover:bg-primary-100 transition-colors">
+                                상세보기
+                            </a>
+                            <button @click="confirmDelete(plan)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
             <!-- Progress Bar for Active Plans -->
             <div v-if="plan.status === 'active'" class="h-1 bg-gray-100">
                 <div class="h-full bg-gradient-to-r from-primary-500 to-purple-500" :style="{ width: getProgressPercent(plan) + '%' }"></div>
+            </div>
+            <!-- Generating Progress Bar -->
+            <div v-if="plan.status === 'generating'" class="h-1 bg-amber-100 overflow-hidden">
+                <div class="h-full w-1/3 bg-gradient-to-r from-amber-400 to-amber-500 animate-pulse rounded-full"></div>
             </div>
         </div>
     </div>
@@ -213,9 +235,8 @@
 
                     <div class="flex gap-3 pt-2">
                         <button type="button" @click="modalStep = 1" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-colors cursor-pointer">이전</button>
-                        <button type="button" @click="generateDietPlan" :disabled="generating" class="flex-[2] py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-colors disabled:opacity-50 cursor-pointer">
-                            <span v-if="generating">생성 중...</span>
-                            <span v-else>AI 생성 시작</span>
+                        <button type="button" @click="generateDietPlan" class="flex-[2] py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-colors cursor-pointer">
+                            AI 생성 시작
                         </button>
                     </div>
                 </div>
@@ -234,36 +255,6 @@
             </div>
             <div class="overflow-y-auto" style="max-height: calc(90vh - 60px);">
                 <survey :embed-mode="true" @survey-completed="onSurveyCompleted"></survey>
-            </div>
-        </div>
-    </div>
-
-    <!-- Generating Loading Modal -->
-    <div v-if="generating" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
-            <div class="relative w-24 h-24 mx-auto mb-6">
-                <div class="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
-                <div class="absolute inset-0 border-4 border-primary-500 rounded-full border-t-transparent animate-spin"></div>
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <svg class="w-10 h-10 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-                    </svg>
-                </div>
-            </div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2 font-heading">AI가 식단을 생성 중입니다</h3>
-            <p class="text-gray-500 mb-4">맞춤 식단과 운동 플랜을 구성하고 있습니다.</p>
-            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
-                <div class="flex items-center justify-center gap-2 text-amber-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span class="font-bold">예상 소요 시간: 3~5분</span>
-                </div>
-            </div>
-            <div class="flex justify-center gap-1 mt-4">
-                <span class="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 0ms;"></span>
-                <span class="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 150ms;"></span>
-                <span class="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 300ms;"></span>
             </div>
         </div>
     </div>
@@ -303,7 +294,8 @@ Vue.createApp({
             showDeleteModal: false,
             showSurveyModal: false,
             selectedPlan: null,
-            generating: false,
+            generatingPlanId: null,
+            pollInterval: null,
             deleting: false,
             errorMessage: '',
             modalStep: 1,
@@ -321,7 +313,10 @@ Vue.createApp({
         }
     },
     mounted() {
-        this.loadDietPlans();
+        this.loadDietPlans().then(() => this.checkGeneratingPlans());
+    },
+    beforeUnmount() {
+        this.stopPolling();
     },
     methods: {
         async loadDietPlans() {
@@ -396,7 +391,6 @@ Vue.createApp({
             });
         },
         async generateDietPlan() {
-            this.generating = true;
             this.showGenerateModal = false;
             this.errorMessage = '';
             try {
@@ -406,14 +400,55 @@ Vue.createApp({
                 };
                 const response = await axios.post('/api/diet-plans/generate', payload);
                 if (response.data.success) {
-                    if (window.showToast) window.showToast('새 식단이 생성되었습니다!', 'success');
-                    this.loadDietPlans();
+                    this.generatingPlanId = response.data.data.diet_plan_id;
+                    if (window.showToast) window.showToast('식단 생성이 시작되었습니다. 완료되면 알려드릴게요!', 'info');
+                    await this.loadDietPlans();
+                    this.startPolling();
                 }
             } catch (error) {
                 this.errorMessage = error.response?.data?.message || '식단 생성에 실패했습니다.';
                 if (window.showToast) window.showToast(this.errorMessage, 'error');
-            } finally {
-                this.generating = false;
+            }
+        },
+        checkGeneratingPlans() {
+            const generatingPlan = this.dietPlans.find(p => p.status === 'generating');
+            if (generatingPlan && !this.pollInterval) {
+                this.generatingPlanId = generatingPlan.id;
+                this.startPolling();
+            }
+        },
+        startPolling() {
+            this.stopPolling();
+            this.pollInterval = setInterval(() => this.pollGenerationStatus(), 5000);
+        },
+        stopPolling() {
+            if (this.pollInterval) {
+                clearInterval(this.pollInterval);
+                this.pollInterval = null;
+            }
+        },
+        async pollGenerationStatus() {
+            if (!this.generatingPlanId) {
+                this.stopPolling();
+                return;
+            }
+            try {
+                const response = await axios.get(`/api/diet-plans/generation-status/${this.generatingPlanId}`);
+                const status = response.data.data.status;
+
+                if (status === 'active') {
+                    this.stopPolling();
+                    this.generatingPlanId = null;
+                    if (window.showToast) window.showToast('식단 플랜이 생성되었습니다!', 'success');
+                    await this.loadDietPlans();
+                } else if (status === 'failed') {
+                    this.stopPolling();
+                    this.generatingPlanId = null;
+                    if (window.showToast) window.showToast('식단 생성에 실패했습니다. 다시 시도해주세요.', 'error');
+                    await this.loadDietPlans();
+                }
+            } catch (error) {
+                console.error('Failed to poll status:', error);
             }
         },
         confirmDelete(plan) {

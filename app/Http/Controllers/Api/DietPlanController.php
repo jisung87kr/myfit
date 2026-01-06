@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateDietPlanJob;
 use App\Models\DailyExercisePlan;
 use App\Models\DietPlan;
 use App\Models\MealPlanItem;
@@ -171,21 +172,16 @@ class DietPlanController extends Controller
             $request->duration_days ?? 7
         );
 
-        try {
-            // Generate the plan with AI directly
-            $this->dietPlanService->generateWithAI($dietPlan);
+        // Dispatch job to generate plan asynchronously
+        GenerateDietPlanJob::dispatch($dietPlan);
 
-            return response()->success(
-                [
-                    'diet_plan_id' => $dietPlan->id,
-                    'status' => $dietPlan->status,
-                ],
-                'Diet plan generated successfully'
-            );
-        } catch (\Exception $e) {
-            $dietPlan->markAsFailed();
-            return response()->error('Failed to generate diet plan: ' . $e->getMessage(), null, 500);
-        }
+        return response()->success(
+            [
+                'diet_plan_id' => $dietPlan->id,
+                'status' => $dietPlan->status,
+            ],
+            '식단 플랜 생성이 시작되었습니다. 완료되면 알림을 보내드립니다.'
+        );
     }
 
     /**
