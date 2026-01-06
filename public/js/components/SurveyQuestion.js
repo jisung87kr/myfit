@@ -96,8 +96,8 @@ export default {
         }
     },
     template: `
-        <div class="mb-6">
-            <label class="block text-sm font-bold text-gray-700 mb-3 ml-1">
+        <div class="!mb-5">
+            <label class="block text-lg font-bold text-gray-900 mb-2">
                 {{ question.question_text }}
                 <span v-if="question.is_required" class="text-rose-500 ml-1">*</span>
             </label>
