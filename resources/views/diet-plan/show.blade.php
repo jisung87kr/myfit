@@ -61,26 +61,50 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
-                        <p class="text-xs text-primary-100 mb-1 font-medium">목표 칼로리</p>
-                        <p class="text-2xl font-bold">@{{ Math.round(dietPlan.target_calories_per_day) }}<span class="text-sm font-normal text-primary-200 ml-1">kcal</span></p>
+                        <p class="text-xs text-primary-100 mb-1 font-medium">일평균 칼로리</p>
+                        <p class="text-2xl font-bold">@{{ dietPlan.avg_calories_per_day || '-' }}<span class="text-sm font-normal text-primary-200 ml-1">kcal</span></p>
                     </div>
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
-                        <p class="text-xs text-primary-100 mb-1 font-medium">단백질</p>
-                        <p class="text-2xl font-bold">@{{ currentDayPlan ? Math.round(currentDayPlan.total_protein_g) : '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
+                        <p class="text-xs text-primary-100 mb-1 font-medium">일평균 단백질</p>
+                        <p class="text-2xl font-bold">@{{ dietPlan.avg_protein_g || '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
                     </div>
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
-                        <p class="text-xs text-primary-100 mb-1 font-medium">탄수화물</p>
-                        <p class="text-2xl font-bold">@{{ currentDayPlan ? Math.round(currentDayPlan.total_carbs_g) : '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
+                        <p class="text-xs text-primary-100 mb-1 font-medium">일평균 탄수화물</p>
+                        <p class="text-2xl font-bold">@{{ dietPlan.avg_carbs_g || '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
                     </div>
                     <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
-                        <p class="text-xs text-primary-100 mb-1 font-medium">지방</p>
-                        <p class="text-2xl font-bold">@{{ currentDayPlan ? Math.round(currentDayPlan.total_fat_g) : '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
+                        <p class="text-xs text-primary-100 mb-1 font-medium">일평균 지방</p>
+                        <p class="text-2xl font-bold">@{{ dietPlan.avg_fat_g || '-' }}<span class="text-sm font-normal text-primary-200 ml-1">g</span></p>
                     </div>
                 </div>
 
                 <p v-if="dietPlan.ai_summary" class="mt-6 text-sm text-primary-100 italic bg-black/10 p-4 rounded-xl border border-white/5">
                     "@{{ dietPlan.ai_summary }}"
                 </p>
+
+                <!-- Estimated Weight Change -->
+                <div v-if="dietPlan.estimated_weight_loss_kg !== null" class="mt-6 bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                    <div class="flex items-center gap-4">
+                        <div :class="['w-14 h-14 rounded-2xl flex items-center justify-center', dietPlan.estimated_weight_loss_kg > 0 ? 'bg-green-500/20' : dietPlan.estimated_weight_loss_kg < 0 ? 'bg-orange-500/20' : 'bg-gray-500/20']">
+                            <svg v-if="dietPlan.estimated_weight_loss_kg > 0" class="w-7 h-7 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+                            <svg v-else-if="dietPlan.estimated_weight_loss_kg < 0" class="w-7 h-7 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            <svg v-else class="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-primary-100 mb-1">플랜 완료 시 예상 체중 변화</p>
+                            <p class="text-2xl font-bold">
+                                <span v-if="dietPlan.estimated_weight_loss_kg > 0" class="text-green-300">-@{{ Math.abs(dietPlan.estimated_weight_loss_kg) }} kg</span>
+                                <span v-else-if="dietPlan.estimated_weight_loss_kg < 0" class="text-orange-300">+@{{ Math.abs(dietPlan.estimated_weight_loss_kg) }} kg</span>
+                                <span v-else class="text-gray-300">유지</span>
+                            </p>
+                        </div>
+                        <div class="text-right text-xs text-primary-200">
+                            <p v-if="dietPlan.estimated_weight_loss_kg > 0">감량 예상</p>
+                            <p v-else-if="dietPlan.estimated_weight_loss_kg < 0">증량 예상</p>
+                            <p v-else>체중 유지</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -106,6 +130,38 @@
 
             <!-- Meals List -->
             <div class="lg:col-span-9 space-y-6">
+                <!-- Daily Summary Card -->
+                <div v-if="currentDayPlan" class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-1">@{{ selectedDay }}일차 요약</h3>
+                            <p class="text-sm text-gray-500">@{{ formatDate(currentDayPlan.date) }}</p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <div class="text-center px-4 py-2 bg-gray-50 rounded-xl">
+                                <p class="text-xs text-gray-500 mb-0.5">칼로리</p>
+                                <p class="text-lg font-bold text-gray-900">@{{ Math.round(currentDayPlan.total_calories) || '-' }}</p>
+                            </div>
+                            <div class="text-center px-4 py-2 bg-blue-50 rounded-xl">
+                                <p class="text-xs text-blue-500 mb-0.5">단백질</p>
+                                <p class="text-lg font-bold text-blue-600">@{{ Math.round(currentDayPlan.total_protein_g) || '-' }}g</p>
+                            </div>
+                            <div class="text-center px-4 py-2 bg-amber-50 rounded-xl">
+                                <p class="text-xs text-amber-500 mb-0.5">탄수화물</p>
+                                <p class="text-lg font-bold text-amber-600">@{{ Math.round(currentDayPlan.total_carbs_g) || '-' }}g</p>
+                            </div>
+                            <div class="text-center px-4 py-2 bg-orange-50 rounded-xl">
+                                <p class="text-xs text-orange-500 mb-0.5">지방</p>
+                                <p class="text-lg font-bold text-orange-600">@{{ Math.round(currentDayPlan.total_fat_g) || '-' }}g</p>
+                            </div>
+                            <div v-if="currentDayExercises && currentDayExercises.length > 0" class="text-center px-4 py-2 bg-green-50 rounded-xl">
+                                <p class="text-xs text-green-500 mb-0.5">운동</p>
+                                <p class="text-lg font-bold text-green-600">@{{ currentDayExercises.length }}개</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Daily Tips -->
                 <div v-if="currentDayPlan && currentDayPlan.tips" class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100">
                     <div class="flex items-start gap-3">

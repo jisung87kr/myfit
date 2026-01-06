@@ -9,7 +9,6 @@ use App\Models\Food;
 use App\Models\Exercise;
 use App\Models\MealPlanItem;
 use App\Models\User;
-use App\Models\UserCalculation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -27,6 +26,7 @@ class DietPlanService
     {
 
         // Create initial plan with 'generating' status
+        // target_calories_per_day will be set by AI after generation
         $dietPlan = DietPlan::create([
             'user_id' => $user->id,
             'survey_submission_id' => $surveySubmissionId,
@@ -34,7 +34,7 @@ class DietPlanService
             'start_date' => Carbon::now(),
             'end_date' => Carbon::now()->addDays($durationDays - 1),
             'duration_days' => $durationDays,
-            'target_calories_per_day' => $this->getTargetCalories($user),
+            'target_calories_per_day' => null,
         ]);
 
         return $dietPlan;
@@ -214,10 +214,10 @@ class DietPlanService
 [응답 형식: 반드시 아래 JSON 형식으로만 응답하세요]
 {
   "summary": "플랜 요약 및 근거 (200자 이내)",
-  "target_calories": 1500,
-  "target_protein_g": 112,
-  "target_carbs_g": 150,
-  "target_fat_g": 50,
+  "target_calories": '',
+  "target_protein_g": '',
+  "target_carbs_g": '',
+  "target_fat_g": '',
   "daily_plans": [
     {
       "day": {$startDay},
@@ -493,18 +493,6 @@ PROMPT;
                 }
             }
         });
-    }
-
-    /**
-     * Get target calories for user
-     */
-    private function getTargetCalories(User $user): float
-    {
-        $calculation = UserCalculation::where('user_id', $user->id)
-            ->latest('calculated_at')
-            ->first();
-
-        return $calculation?->target_calories ?? 1500;
     }
 
     /**

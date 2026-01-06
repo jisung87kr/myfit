@@ -9,6 +9,7 @@ use App\Models\DietPlan;
 use App\Models\MealPlanItem;
 use App\Models\Survey;
 use App\Models\SurveySubmission;
+use App\Services\CalorieCalculationService;
 use App\Services\DietPlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,8 @@ use Illuminate\Support\Facades\Validator;
 class DietPlanController extends Controller
 {
     public function __construct(
-        private DietPlanService $dietPlanService
+        private DietPlanService $dietPlanService,
+        private CalorieCalculationService $calorieCalculationService
     ) {}
 
     /**
@@ -28,9 +30,22 @@ class DietPlanController extends Controller
         $user = $request->user();
 
         $plans = DietPlan::where('user_id', $user->id)
+            ->with(['dailyMealPlans', 'dailyExercisePlans'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($plan) {
+                // Calculate averages from daily meal plans
+                $mealPlans = $plan->dailyMealPlans;
+                $avgCalories = $mealPlans->avg('total_calories');
+                $avgProtein = $mealPlans->avg('total_protein_g');
+                $avgCarbs = $mealPlans->avg('total_carbs_g');
+                $avgFat = $mealPlans->avg('total_fat_g');
+
+                // Calculate exercise totals
+                $exercisePlans = $plan->dailyExercisePlans;
+                $totalExercises = $exercisePlans->count();
+                $avgCaloriesBurned = $exercisePlans->avg('estimated_calories_burned');
+
                 return [
                     'id' => $plan->id,
                     'status' => $plan->status,
@@ -41,6 +56,13 @@ class DietPlanController extends Controller
                     'ai_summary' => $plan->ai_summary,
                     'created_at' => $plan->created_at,
                     'updated_at' => $plan->updated_at,
+                    // Aggregated data from daily plans
+                    'avg_calories_per_day' => $avgCalories ? round($avgCalories) : null,
+                    'avg_protein_g' => $avgProtein ? round($avgProtein) : null,
+                    'avg_carbs_g' => $avgCarbs ? round($avgCarbs) : null,
+                    'avg_fat_g' => $avgFat ? round($avgFat) : null,
+                    'total_exercises' => $totalExercises,
+                    'avg_calories_burned' => $avgCaloriesBurned ? round($avgCaloriesBurned) : null,
                 ];
             });
 
@@ -300,6 +322,24 @@ class DietPlanController extends Controller
             return response()->forbidden('You do not have access to this diet plan');
         }
 
+        // Calculate aggregated data from daily plans
+        $mealPlans = $dietPlan->dailyMealPlans;
+        $avgCalories = $mealPlans->avg('total_calories');
+        $avgProtein = $mealPlans->avg('total_protein_g');
+        $avgCarbs = $mealPlans->avg('total_carbs_g');
+        $avgFat = $mealPlans->avg('total_fat_g');
+
+        $exercisePlans = $dietPlan->dailyExercisePlans;
+        $totalExercises = $exercisePlans->count();
+        $avgCaloriesBurned = $exercisePlans->avg('estimated_calories_burned') ?? 0;
+
+        // Calculate estimated weight loss
+        $estimatedWeightLoss = $this->calculateEstimatedWeightLoss(
+            $dietPlan,
+            $avgCalories,
+            $avgCaloriesBurned
+        );
+
         return response()->success([
             'id' => $dietPlan->id,
             'status' => $dietPlan->status,
@@ -308,6 +348,14 @@ class DietPlanController extends Controller
             'end_date' => $dietPlan->end_date,
             'target_calories_per_day' => $dietPlan->target_calories_per_day,
             'ai_summary' => $dietPlan->ai_summary,
+            // Aggregated data from daily plans
+            'avg_calories_per_day' => $avgCalories ? round($avgCalories) : null,
+            'avg_protein_g' => $avgProtein ? round($avgProtein) : null,
+            'avg_carbs_g' => $avgCarbs ? round($avgCarbs) : null,
+            'avg_fat_g' => $avgFat ? round($avgFat) : null,
+            'total_exercises' => $totalExercises,
+            'avg_calories_burned' => $avgCaloriesBurned ? round($avgCaloriesBurned) : null,
+            'estimated_weight_loss_kg' => $estimatedWeightLoss,
             'daily_meal_plans' => $dietPlan->dailyMealPlans->map(function ($mealPlan) {
                 return [
                     'day_number' => $mealPlan->day_number,
@@ -585,5 +633,81 @@ class DietPlanController extends Controller
             'fat_g' => $item->fat_g,
             'notes' => $item->notes,
         ];
+    }
+
+    /**
+     * Calculate estimated weight loss for a diet plan
+     *
+     * Formula:
+     * - Daily deficit = TDEE - avg_calories_intake + avg_exercise_burned
+     * - Total deficit = daily_deficit * duration_days
+     * - Weight loss (kg) = total_deficit / 7700 (7700 kcal ≈ 1kg)
+     *
+     * @param DietPlan $dietPlan
+     * @param float|null $avgCaloriesIntake
+     * @param float $avgCaloriesBurned
+     * @return float|null
+     */
+    private function calculateEstimatedWeightLoss(
+        DietPlan $dietPlan,
+        ?float $avgCaloriesIntake,
+        float $avgCaloriesBurned = 0
+    ): ?float {
+        // Need avg calories intake to calculate
+        if (!$avgCaloriesIntake) {
+            return null;
+        }
+
+        // Get user's TDEE from survey submission
+        $submission = $dietPlan->surveySubmission;
+        if (!$submission) {
+            return null;
+        }
+
+        $surveyData = $submission->completion_data ?? [];
+
+        // Extract required data for TDEE calculation
+        $gender = $surveyData['성별'] ?? null;
+        $age = isset($surveyData['나이']) ? (int) $surveyData['나이'] : null;
+        $weight = isset($surveyData['현재 체중 (kg)']) ? (float) $surveyData['현재 체중 (kg)'] : null;
+        $height = isset($surveyData['키 (cm)']) ? (float) $surveyData['키 (cm)'] : null;
+        $activityLevel = $surveyData['일일 활동량'] ?? null;
+
+        // All required fields must be present
+        if (!$gender || !$age || !$weight || !$height || !$activityLevel) {
+            return null;
+        }
+
+        // Map activity level to factor
+        $activityMapping = [
+            '거의 운동 안 함' => 'sedentary',
+            '좌식 생활' => 'sedentary',
+            '주 1-3회 가벼운 운동' => 'lightly_active',
+            '가벼운 활동' => 'lightly_active',
+            '주 3-5회 중간 강도 운동' => 'moderately_active',
+            '보통 활동' => 'moderately_active',
+            '주 6-7회 고강도 운동' => 'very_active',
+            '매우 활동적' => 'very_active',
+            '하루 2회 이상 운동' => 'extra_active',
+        ];
+
+        $mappedActivityLevel = $activityMapping[$activityLevel] ?? 'sedentary';
+
+        // Calculate BMR and TDEE
+        $bmr = $this->calorieCalculationService->calculateBMR($gender, $weight, $height, $age);
+        $tdee = $this->calorieCalculationService->calculateTDEE($bmr, $mappedActivityLevel);
+
+        // Calculate daily calorie deficit
+        // Deficit = TDEE - calories eaten + calories burned from exercise
+        $dailyDeficit = $tdee - $avgCaloriesIntake + $avgCaloriesBurned;
+
+        // If no deficit (surplus), return negative value (weight gain)
+        $durationDays = $dietPlan->duration_days ?? 7;
+        $totalDeficit = $dailyDeficit * $durationDays;
+
+        // 7700 kcal ≈ 1 kg of body fat
+        $weightLossKg = $totalDeficit / 7700;
+
+        return round($weightLossKg, 2);
     }
 }
