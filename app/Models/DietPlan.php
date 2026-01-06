@@ -13,7 +13,7 @@ class DietPlan extends Model
 
     protected $fillable = [
         'user_id',
-        'survey_response_id',
+        'survey_submission_id',
         'status',
         'start_date',
         'end_date',
@@ -42,7 +42,7 @@ class DietPlan extends Model
      */
     public function surveySubmission(): BelongsTo
     {
-        return $this->belongsTo(SurveySubmission::class, 'survey_response_id');
+        return $this->belongsTo(SurveySubmission::class);
     }
 
     /**

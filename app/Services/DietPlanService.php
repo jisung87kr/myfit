@@ -23,13 +23,13 @@ class DietPlanService
     /**
      * Generate a new diet plan for a user
      */
-    public function generatePlan(User $user, ?int $surveyResponseId = null, int $durationDays = self::DEFAULT_PLAN_DURATION_DAYS): DietPlan
+    public function generatePlan(User $user, ?int $surveySubmissionId = null, int $durationDays = self::DEFAULT_PLAN_DURATION_DAYS): DietPlan
     {
 
         // Create initial plan with 'generating' status
         $dietPlan = DietPlan::create([
             'user_id' => $user->id,
-            'survey_response_id' => $surveyResponseId,
+            'survey_submission_id' => $surveySubmissionId,
             'status' => 'generating',
             'start_date' => Carbon::now(),
             'end_date' => Carbon::now()->addDays($durationDays - 1),
@@ -582,7 +582,7 @@ PROMPT;
         // Create new plan with same duration
         return $this->generatePlan(
             $dietPlan->user,
-            $dietPlan->survey_response_id,
+            $dietPlan->survey_submission_id,
             $dietPlan->duration_days ?? self::DEFAULT_PLAN_DURATION_DAYS
         );
     }
