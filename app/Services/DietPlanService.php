@@ -176,23 +176,10 @@ class DietPlanService
 
         // Get survey submission data from diet plan's linked submission
         $submission = $dietPlan->surveySubmission;
-        $responses = $submission?->completion_data ?? [];
+        $surveyResponses = $submission?->completion_data ?? [];
 
         return [
-            'gender' => $responses['성별'] ?? '알 수 없음',
-            'age' => $responses['나이'] ?? 30,
-            'current_weight' => $responses['현재 체중 (kg)'] ?? 70,
-            'target_weight' => $responses['목표 체중 (kg)'] ?? 65,
-            'height' => $responses['키 (cm)'] ?? 170,
-            'goal' => $responses['주요 목표'] ?? '체중 감량',
-            'goal_period' => $responses['희망 감량 기간'] ?? '8주',
-            'activity_level' => $responses['일일 활동량'] ?? '보통',
-            'exercise_experience' => $responses['운동 경험'] ?? '초보',
-            'meals_per_day' => $responses['하루 식사 횟수'] ?? '3회',
-            'preferred_foods' => $responses['선호하는 음식 종류'] ?? '한식',
-            'disliked_foods' => $responses['싫어하는 음식 재료'] ?? [],
-            'dietary_restrictions' => $responses['식이 제한'] ?? '없음',
-            'can_cook' => $responses['조리 가능 여부'] ?? '직접 조리',
+            'survey_responses' => $surveyResponses,
             'target_calories' => $calculation?->target_calories ?? 1500,
             'target_protein_g' => $calculation?->target_protein_g ?? 112,
             'target_carbs_g' => $calculation?->target_carbs_g ?? 150,
@@ -210,34 +197,19 @@ class DietPlanService
             ? implode(', ', array_filter($value))
             : (string) ($value ?: $default);
 
-        // Convert arrays to strings for prompt
-        $dislikedFoods = $toString($userData['disliked_foods'], '없음');
-        $preferredFoods = $toString($userData['preferred_foods'], '한식');
-        $dietaryRestrictions = $toString($userData['dietary_restrictions'], '없음');
-        $goal = $toString($userData['goal'], '체중 감량');
-
         $durationDays = $endDay - $startDay + 1;
         $startDate = $dietPlan->start_date->copy()->addDays($startDay - 1)->format('Y-m-d');
+
+        // Build survey responses section dynamically
+        $surveyResponses = $userData['survey_responses'] ?? [];
+        $surveySection = $this->buildSurveySection($surveyResponses, $toString);
 
         return <<<PROMPT
 당신은 영양학과 운동 전문가입니다. 다음 사용자 정보를 바탕으로 {$durationDays}일간의 맞춤형 다이어트 플랜을 작성해주세요.
 
-[사용자 정보]
-- 성별: {$userData['gender']}
-- 나이: {$userData['age']}세
-- 현재 체중: {$userData['current_weight']}kg
-- 목표 체중: {$userData['target_weight']}kg
-- 키: {$userData['height']}cm
-- 주요 목표: {$goal}
-- 목표 기간: {$toString($userData['goal_period'], '8주')}
+[사용자 설문 응답]
+{$surveySection}
 - 일일 목표 칼로리: {$userData['target_calories']}kcal
-- 활동량: {$userData['activity_level']}
-- 운동 경험: {$userData['exercise_experience']}
-- 하루 식사 횟수: {$userData['meals_per_day']}
-- 선호 음식: {$preferredFoods}
-- 싫어하는 재료: {$dislikedFoods}
-- 식이 제한: {$dietaryRestrictions}
-- 조리 가능 여부: {$userData['can_cook']}
 
 [영양소 목표]
 - 탄수화물: {$userData['target_carbs_g']}g
@@ -293,6 +265,24 @@ class DietPlanService
 - 운동 강도(intensity)는 반드시 "낮음", "보통", "높음" 중 하나만 사용하세요
 - 운동은 주 3-5회만 포함하세요 (나머지 날의 exercise는 null)
 PROMPT;
+    }
+
+    /**
+     * Build survey section for prompt dynamically from survey responses
+     */
+    private function buildSurveySection(array $surveyResponses, callable $toString): string
+    {
+        if (empty($surveyResponses)) {
+            return "- 설문 응답 없음";
+        }
+
+        $lines = [];
+        foreach ($surveyResponses as $question => $answer) {
+            $formattedAnswer = $toString($answer, '미응답');
+            $lines[] = "- {$question}: {$formattedAnswer}";
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
