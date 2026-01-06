@@ -23,8 +23,13 @@ export default {
         authToken: {
             type: String,
             default: ''
+        },
+        embedMode: {
+            type: Boolean,
+            default: false
         }
     },
+    emits: ['survey-completed'],
     data() {
         return {
             survey: null,
@@ -167,13 +172,23 @@ export default {
                 );
 
                 if (response.data.success) {
-                    if (window.showToast) {
-                        window.showToast('설문이 완료되었습니다! 이제 맞춤 식단을 생성할 수 있습니다.', 'success');
-                    }
+                    const submissionData = response.data.data;
 
-                    setTimeout(() => {
-                        window.location.href = this.redirectUrl;
-                    }, 1500);
+                    if (this.embedMode) {
+                        // Embed 모드에서는 이벤트만 emit
+                        this.$emit('survey-completed', submissionData);
+                        if (window.showToast) {
+                            window.showToast('설문이 완료되었습니다!', 'success');
+                        }
+                    } else {
+                        // 일반 모드에서는 리다이렉트
+                        if (window.showToast) {
+                            window.showToast('설문이 완료되었습니다! 이제 맞춤 식단을 생성할 수 있습니다.', 'success');
+                        }
+                        setTimeout(() => {
+                            window.location.href = this.redirectUrl;
+                        }, 1500);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to submit survey:', error);

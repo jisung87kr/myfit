@@ -16,9 +16,9 @@
                 <p class="font-bold text-amber-800">맞춤 식단 생성을 위한 설문이 필요합니다</p>
                 <p class="text-sm text-amber-600">설문을 완료하시면 AI가 당신에게 딱 맞는 식단을 만들어 드립니다.</p>
             </div>
-            <a href="/survey" class="px-4 py-2 bg-amber-500 text-white font-bold text-sm rounded-xl hover:bg-amber-600 transition-colors flex-shrink-0">
+            <button @click="openGenerateModal" class="px-4 py-2 bg-amber-500 text-white font-bold text-sm rounded-xl hover:bg-amber-600 transition-colors flex-shrink-0 cursor-pointer">
                 설문 시작하기
-            </a>
+            </button>
         </div>
     </div>
 
@@ -31,8 +31,7 @@
         <div>
             <button @click="openGenerateModal" class="px-5 py-2.5 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg shadow-gray-900/20 flex items-center cursor-pointer">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                <span v-if="surveyStatus.is_completed">새 플랜 생성</span>
-                <span v-else>설문 완료하기</span>
+                새 플랜 생성
             </button>
         </div>
     </header>
@@ -53,8 +52,7 @@
         <h3 class="text-xl font-bold text-gray-900 mb-2 font-heading">아직 식단 플랜이 없습니다</h3>
         <p class="text-gray-500 mb-8 max-w-sm mx-auto">AI가 당신의 목표와 신체 정보에 맞춰 최적의 식단을 생성해드립니다.</p>
         <button @click="openGenerateModal" class="px-6 py-3 bg-gradient-to-r from-primary-500 to-purple-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 cursor-pointer">
-            <span v-if="surveyStatus.is_completed">맞춤 식단 생성하기</span>
-            <span v-else>설문 완료 후 시작하기</span>
+            맞춤 식단 생성하기
         </button>
     </div>
 
@@ -102,41 +100,143 @@
         </div>
     </div>
 
-    <!-- Generate Modal -->
-    <div v-if="showGenerateModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showGenerateModal = false">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all scale-100">
-            <h3 class="text-xl font-bold text-gray-900 mb-6 font-heading flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                </div>
-                새 식단 생성
-            </h3>
+    <!-- Generate Modal - Step Based -->
+    <div v-if="showGenerateModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="closeGenerateModal">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
+            <!-- Step Indicator -->
+            <div class="flex items-center justify-center gap-2 mb-6">
+                <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all', modalStep === 1 ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-400']">1</div>
+                <div class="w-8 h-0.5 bg-gray-200"></div>
+                <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all', modalStep === 2 ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-400']">2</div>
+            </div>
 
-            <form @submit.prevent="generateDietPlan" class="space-y-5">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">기간</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button type="button" @click="generateForm.duration_days = 7" :class="['py-2.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer', generateForm.duration_days === 7 ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 text-gray-500 hover:border-gray-300']">7일</button>
-                        <button type="button" @click="generateForm.duration_days = 14" :class="['py-2.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer', generateForm.duration_days === 14 ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 text-gray-500 hover:border-gray-300']">14일</button>
-                        <button type="button" @click="generateForm.duration_days = 30" :class="['py-2.5 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer', generateForm.duration_days === 30 ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 text-gray-500 hover:border-gray-300']">30일</button>
+            <!-- Step 1: Survey Selection -->
+            <div v-if="modalStep === 1">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-heading flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                     </div>
+                    설문 선택
+                </h3>
+                <p class="text-gray-500 text-sm mb-6">식단 플랜 생성에 사용할 설문을 선택하세요.</p>
+
+                <div class="space-y-3 mb-6">
+                    <!-- New Survey Option -->
+                    <button
+                        type="button"
+                        @click="selectSurveyOption('new')"
+                        :class="['w-full p-4 rounded-2xl border-2 text-left transition-all cursor-pointer', generateForm.surveyOption === 'new' ? 'border-primary-500 bg-primary-50' : 'border-gray-100 hover:border-gray-300']"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div :class="['w-10 h-10 rounded-xl flex items-center justify-center', generateForm.surveyOption === 'new' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500']">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            </div>
+                            <div>
+                                <p class="font-bold text-gray-900">새 설문 작성</p>
+                                <p class="text-sm text-gray-500">새로운 설문을 작성하여 맞춤 식단을 받습니다</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- Existing Submissions -->
+                    <template v-if="surveyStatus.submissions && surveyStatus.submissions.length > 0">
+                        <div class="relative">
+                            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
+                            <div class="relative flex justify-center"><span class="px-3 bg-white text-xs font-bold text-gray-400 uppercase">이전 설문 사용</span></div>
+                        </div>
+                        <button
+                            v-for="submission in surveyStatus.submissions"
+                            :key="submission.id"
+                            type="button"
+                            @click="selectSurveyOption(submission.id)"
+                            :class="['w-full p-4 rounded-2xl border-2 text-left transition-all cursor-pointer', generateForm.surveyOption === submission.id ? 'border-primary-500 bg-primary-50' : 'border-gray-100 hover:border-gray-300']"
+                        >
+                            <div class="flex items-center gap-3">
+                                <div :class="['w-10 h-10 rounded-xl flex items-center justify-center', generateForm.surveyOption === submission.id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500']">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-gray-900 truncate">@{{ submission.summary }}</p>
+                                    <p class="text-sm text-gray-500">@{{ formatDateTime(submission.submitted_at) }}</p>
+                                </div>
+                            </div>
+                        </button>
+                    </template>
                 </div>
 
-                <div v-if="errorMessage" class="p-3 bg-red-50 rounded-xl text-red-600 text-sm font-medium">
-                    @{{ errorMessage }}
-                </div>
-
-                <div class="flex gap-3 pt-2">
-                    <button type="button" @click="showGenerateModal = false" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-colors cursor-pointer">취소</button>
-                    <button type="submit" :disabled="generating" class="flex-[2] py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-colors disabled:opacity-50 cursor-pointer">
-                        <span v-if="generating">생성 중...</span>
-                        <span v-else>AI 생성 시작</span>
+                <div class="flex gap-3">
+                    <button type="button" @click="closeGenerateModal" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-colors cursor-pointer">취소</button>
+                    <button type="button" @click="proceedToStep2" :disabled="!generateForm.surveyOption" class="flex-[2] py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-colors disabled:opacity-50 cursor-pointer">
+                        다음
                     </button>
                 </div>
-            </form>
+            </div>
+
+            <!-- Step 2: Duration Selection -->
+            <div v-if="modalStep === 2">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-heading flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    기간 설정
+                </h3>
+                <p class="text-gray-500 text-sm mb-6">식단 플랜의 기간을 선택하세요.</p>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase">플랜 기간</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" @click="generateForm.duration_days = 7" :class="['py-3 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer', generateForm.duration_days === 7 ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 text-gray-500 hover:border-gray-300']">
+                                <span class="block text-lg">7일</span>
+                                <span class="block text-xs text-gray-400 mt-0.5">1주</span>
+                            </button>
+                            <button type="button" @click="generateForm.duration_days = 14" :class="['py-3 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer', generateForm.duration_days === 14 ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 text-gray-500 hover:border-gray-300']">
+                                <span class="block text-lg">14일</span>
+                                <span class="block text-xs text-gray-400 mt-0.5">2주</span>
+                            </button>
+                            <button type="button" @click="generateForm.duration_days = 30" :class="['py-3 rounded-xl text-sm font-bold border-2 transition-all cursor-pointer', generateForm.duration_days === 30 ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-100 text-gray-500 hover:border-gray-300']">
+                                <span class="block text-lg">30일</span>
+                                <span class="block text-xs text-gray-400 mt-0.5">1달</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Selected Survey Summary -->
+                    <div class="p-4 bg-gray-50 rounded-2xl">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-2">선택된 설문</p>
+                        <p class="font-bold text-gray-900">@{{ getSelectedSurveySummary() }}</p>
+                    </div>
+
+                    <div v-if="errorMessage" class="p-3 bg-red-50 rounded-xl text-red-600 text-sm font-medium">
+                        @{{ errorMessage }}
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="modalStep = 1" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-colors cursor-pointer">이전</button>
+                        <button type="button" @click="generateDietPlan" :disabled="generating" class="flex-[2] py-3 bg-primary-600 text-white rounded-2xl font-bold hover:bg-primary-700 transition-colors disabled:opacity-50 cursor-pointer">
+                            <span v-if="generating">생성 중...</span>
+                            <span v-else>AI 생성 시작</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <survey></survey>
+
+    <!-- Survey Modal (for new survey) -->
+    <div v-if="showSurveyModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="font-bold text-gray-900">새 설문 작성</h3>
+                <button @click="closeSurveyModal" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="overflow-y-auto" style="max-height: calc(90vh - 60px);">
+                <survey :embed-mode="true" @survey-completed="onSurveyCompleted"></survey>
+            </div>
+        </div>
+    </div>
 
     <!-- Generating Loading Modal -->
     <div v-if="generating" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -201,17 +301,22 @@ Vue.createApp({
             loading: false,
             showGenerateModal: false,
             showDeleteModal: false,
+            showSurveyModal: false,
             selectedPlan: null,
             generating: false,
             deleting: false,
             errorMessage: '',
+            modalStep: 1,
             generateForm: {
-                duration_days: 7
+                duration_days: 7,
+                surveyOption: null,
+                survey_submission_id: null
             },
             surveyStatus: {
                 has_survey: false,
                 is_completed: false,
-                survey_id: null
+                survey_id: null,
+                submissions: []
             }
         }
     },
@@ -234,19 +339,72 @@ Vue.createApp({
             }
         },
         openGenerateModal() {
-            if (!this.surveyStatus.is_completed) {
-                if (window.showToast) window.showToast('식단 플랜을 생성하려면 먼저 설문을 완료해주세요.', 'warning');
-                window.location.href = '/survey';
-                return;
-            }
+            this.modalStep = 1;
+            this.generateForm.surveyOption = null;
+            this.generateForm.survey_submission_id = null;
+            this.generateForm.duration_days = 7;
+            this.errorMessage = '';
             this.showGenerateModal = true;
+        },
+        closeGenerateModal() {
+            this.showGenerateModal = false;
+            this.modalStep = 1;
+        },
+        selectSurveyOption(option) {
+            this.generateForm.surveyOption = option;
+        },
+        proceedToStep2() {
+            if (this.generateForm.surveyOption === 'new') {
+                this.showGenerateModal = false;
+                this.showSurveyModal = true;
+            } else {
+                this.generateForm.survey_submission_id = this.generateForm.surveyOption;
+                this.modalStep = 2;
+            }
+        },
+        closeSurveyModal() {
+            this.showSurveyModal = false;
+            this.showGenerateModal = true;
+        },
+        onSurveyCompleted(submissionData) {
+            this.showSurveyModal = false;
+            this.generateForm.survey_submission_id = submissionData.submission_id;
+            this.generateForm.surveyOption = submissionData.submission_id;
+            this.modalStep = 2;
+            this.showGenerateModal = true;
+            this.loadDietPlans();
+        },
+        getSelectedSurveySummary() {
+            if (this.generateForm.surveyOption === 'new') {
+                return '새 설문 작성';
+            }
+            const submission = this.surveyStatus.submissions?.find(s => s.id === this.generateForm.surveyOption);
+            if (submission) {
+                return submission.summary;
+            }
+            return '선택된 설문 없음';
+        },
+        formatDateTime(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
         },
         async generateDietPlan() {
             this.generating = true;
             this.showGenerateModal = false;
             this.errorMessage = '';
             try {
-                const response = await axios.post('/api/diet-plans/generate', this.generateForm);
+                const payload = {
+                    duration_days: this.generateForm.duration_days,
+                    survey_submission_id: this.generateForm.survey_submission_id
+                };
+                const response = await axios.post('/api/diet-plans/generate', payload);
                 if (response.data.success) {
                     if (window.showToast) window.showToast('새 식단이 생성되었습니다!', 'success');
                     this.loadDietPlans();

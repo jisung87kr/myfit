@@ -68,16 +68,49 @@ class DietPlanController extends Controller
             ];
         }
 
-        $submission = SurveySubmission::where('user_id', $user->id)
+        $submissions = SurveySubmission::where('user_id', $user->id)
             ->where('survey_id', $survey->id)
-            ->first();
+            ->orderBy('submitted_at', 'desc')
+            ->get();
 
         return [
             'has_survey' => true,
-            'is_completed' => $submission !== null,
+            'is_completed' => $submissions->isNotEmpty(),
             'survey_id' => $survey->id,
-            'submission_id' => $submission?->id,
+            'submissions' => $submissions->map(function ($submission) {
+                return [
+                    'id' => $submission->id,
+                    'submitted_at' => $submission->submitted_at,
+                    'summary' => $this->getSurveySubmissionSummary($submission),
+                ];
+            }),
         ];
+    }
+
+    /**
+     * Get a brief summary of survey submission for display
+     */
+    private function getSurveySubmissionSummary(SurveySubmission $submission): string
+    {
+        $data = $submission->completion_data ?? [];
+
+        $parts = [];
+
+        // 목표 추출
+        if (isset($data['목표'])) {
+            $parts[] = $data['목표'];
+        }
+
+        // 활동량 추출
+        if (isset($data['활동량'])) {
+            $parts[] = '활동량: ' . $data['활동량'];
+        }
+
+        if (empty($parts)) {
+            return '설문 응답 #' . $submission->id;
+        }
+
+        return implode(' / ', $parts);
     }
 
     /**
@@ -87,6 +120,7 @@ class DietPlanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'duration_days' => 'nullable|integer|in:7,14,30',
+            'survey_submission_id' => 'nullable|integer|exists:survey_submissions,id',
         ]);
 
         if ($validator->fails()) {
@@ -102,25 +136,38 @@ class DietPlanController extends Controller
             return response()->error('활성화된 설문이 없습니다.', null, 400);
         }
 
-        $submission = SurveySubmission::where('user_id', $user->id)
-            ->where('survey_id', $survey->id)
-            ->first();
+        // Use provided submission_id or get the latest one
+        $submissionId = $request->survey_submission_id;
 
-        if (!$submission) {
-            return response()->error(
-                '식단 플랜을 생성하려면 먼저 설문을 완료해야 합니다.',
-                ['survey_id' => $survey->id],
-                400
-            );
+        if ($submissionId) {
+            // Verify the submission belongs to this user
+            $submission = SurveySubmission::where('id', $submissionId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$submission) {
+                return response()->error('해당 설문 응답을 찾을 수 없습니다.', null, 404);
+            }
+        } else {
+            // Get the latest submission
+            $submission = SurveySubmission::where('user_id', $user->id)
+                ->where('survey_id', $survey->id)
+                ->orderBy('submitted_at', 'desc')
+                ->first();
+
+            if (!$submission) {
+                return response()->error(
+                    '식단 플랜을 생성하려면 먼저 설문을 완료해야 합니다.',
+                    ['survey_id' => $survey->id],
+                    400
+                );
+            }
         }
 
-        // Get the latest survey response ID for this user
-        $surveyResponse = $user->surveyResponses()->latest()->first();
-
-        // Create initial plan
+        // Create initial plan with survey_submission_id
         $dietPlan = $this->dietPlanService->generatePlan(
             $user,
-            $surveyResponse?->id,
+            $submission->id,
             $request->duration_days ?? 7
         );
 
