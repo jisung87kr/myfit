@@ -57,25 +57,25 @@ class SurveyService
 
         try {
             // 이미 제출했는지 확인
-            $existingSubmission = SurveySubmission::where('user_id', $user->id)
-                ->where('survey_id', $survey->id)
-                ->first();
-
-            if ($existingSubmission) {
-                // 기존 제출 업데이트
-                $existingSubmission->update([
-                    'completion_data' => $answers,
-                    'submitted_at' => now(),
-                ]);
-
-                DB::commit();
-
-                return [
-                    'submission_id' => $existingSubmission->id,
-                    'submitted_at' => $existingSubmission->submitted_at->toISOString(),
-                    'message' => '설문이 업데이트되었습니다.',
-                ];
-            }
+//            $existingSubmission = SurveySubmission::where('user_id', $user->id)
+//                ->where('survey_id', $survey->id)
+//                ->first();
+//
+//            if ($existingSubmission) {
+//                // 기존 제출 업데이트
+//                $existingSubmission->update([
+//                    'completion_data' => $answers,
+//                    'submitted_at' => now(),
+//                ]);
+//
+//                DB::commit();
+//
+//                return [
+//                    'submission_id' => $existingSubmission->id,
+//                    'submitted_at' => $existingSubmission->submitted_at->toISOString(),
+//                    'message' => '설문이 업데이트되었습니다.',
+//                ];
+//            }
 
             // 새 제출 생성
             $submission = SurveySubmission::create([

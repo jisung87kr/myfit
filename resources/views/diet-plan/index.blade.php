@@ -136,6 +136,7 @@
             </form>
         </div>
     </div>
+    <survey></survey>
 
     <!-- Generating Loading Modal -->
     <div v-if="generating" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -188,8 +189,12 @@
 @endsection
 
 @push('scripts')
-<script>
+<script type="module">
+
+import Survey from '{{ asset('/js/components/SurveyComponent.js') }}';
+
 Vue.createApp({
+    components: { Survey },
     data() {
         return {
             dietPlans: [],
