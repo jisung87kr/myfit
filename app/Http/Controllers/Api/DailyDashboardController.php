@@ -621,6 +621,7 @@ class DailyDashboardController extends Controller
             'has_active_plan' => true,
             'active_plan' => [
                 'id' => $activePlan->id,
+                'name' => $activePlan->name,
                 'duration_days' => $activePlan->duration_days,
                 'start_date' => $activePlan->start_date,
                 'end_date' => $activePlan->end_date,

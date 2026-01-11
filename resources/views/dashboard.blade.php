@@ -41,7 +41,7 @@
                 >
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="font-bold text-gray-900">@{{ plan.duration_days }}일 플랜</span>
+                            <span class="font-bold text-gray-900">@{{ plan.name || plan.duration_days + '일 플랜' }}</span>
                             <span :class="['px-2 py-0.5 text-xs font-bold rounded-lg', getStatusClass(plan.status)]">
                                 @{{ getStatusLabel(plan.status) }}
                             </span>
@@ -139,7 +139,7 @@
                         </div>
                         <div class="text-left">
                             <p class="text-xs text-gray-500 font-medium">현재 플랜</p>
-                            <p class="text-sm text-gray-900 font-bold">@{{ activePlan.duration_days }}일 플랜</p>
+                            <p class="text-sm text-gray-900 font-bold">@{{ activePlan.name || activePlan.duration_days + '일 플랜' }}</p>
                         </div>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
@@ -162,7 +162,7 @@
                             >
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <span class="font-bold text-gray-900">@{{ plan.duration_days }}일 플랜</span>
+                                        <span class="font-bold text-gray-900">@{{ plan.name || plan.duration_days + '일 플랜' }}</span>
                                         <span v-if="plan.id === activePlan.id" class="px-2 py-0.5 text-xs font-bold rounded-lg bg-primary-100 text-primary-700">현재</span>
                                         <span v-else :class="['px-2 py-0.5 text-xs font-bold rounded-lg', getStatusClass(plan.status)]">
                                             @{{ getStatusLabel(plan.status) }}
