@@ -12,9 +12,88 @@
         </div>
     </div>
 
-    <!-- Dashboard Content -->
+    <!-- No Plan State -->
+    <div v-else-if="!hasActivePlan" class="animate-fade-in-up">
+        <!-- Header -->
+        <header class="mb-8">
+            <p class="text-gray-500 font-medium mb-1">Welcome back</p>
+            <h1 class="text-4xl font-bold text-gray-900 font-heading tracking-tight">
+                {{ auth()->user()->name }}님, <span class="text-primary-600">환영합니다!</span>
+            </h1>
+        </header>
+
+        <!-- CTA Section -->
+        <div class="bg-gradient-to-br from-primary-600 to-accent-600 rounded-3xl p-12 text-center text-white relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10">
+                <svg class="w-full h-full" viewBox="0 0 400 400" fill="currentColor">
+                    <circle cx="200" cy="200" r="150" opacity="0.3"/>
+                    <circle cx="50" cy="350" r="100" opacity="0.2"/>
+                    <circle cx="350" cy="50" r="80" opacity="0.2"/>
+                </svg>
+            </div>
+
+            <div class="relative z-10">
+                <div class="w-24 h-24 mx-auto mb-6 bg-white/20 backdrop-blur rounded-3xl flex items-center justify-center">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                </div>
+
+                <h2 class="text-3xl font-bold mb-4 font-heading">맞춤 플랜을 시작해보세요</h2>
+                <p class="text-primary-100 mb-8 max-w-md mx-auto text-lg">
+                    간단한 설문으로 AI가 당신만의 식단과 운동 계획을 만들어 드립니다.
+                </p>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <a v-if="!surveyStatus.is_completed" :href="'/survey/' + surveyStatus.survey_id" class="px-8 py-4 bg-white text-primary-600 font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                        설문 시작하기
+                    </a>
+                    <a v-else href="{{ route('diet-plan.index') }}" class="px-8 py-4 bg-white text-primary-600 font-bold rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                        플랜 생성하기
+                    </a>
+                    <a href="{{ route('diet-plan.index') }}" class="px-8 py-4 bg-white/20 backdrop-blur text-white font-bold rounded-2xl border border-white/30 hover:bg-white/30 transition-all">
+                        플랜 목록 보기
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="{{ route('survey.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary-200 transition-all group">
+                <div class="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <h3 class="font-bold text-gray-900">설문하기</h3>
+                <p class="text-sm text-gray-500 mt-1">맞춤 플랜 생성</p>
+            </a>
+            <a href="{{ route('meals.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-200 transition-all group">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                </div>
+                <h3 class="font-bold text-gray-900">식사 기록</h3>
+                <p class="text-sm text-gray-500 mt-1">오늘 먹은 것</p>
+            </a>
+            <a href="{{ route('exercises.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all group">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <h3 class="font-bold text-gray-900">운동 기록</h3>
+                <p class="text-sm text-gray-500 mt-1">활동 추가</p>
+            </a>
+            <a href="{{ route('weight.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-purple-200 transition-all group">
+                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+                </div>
+                <h3 class="font-bold text-gray-900">체중 기록</h3>
+                <p class="text-sm text-gray-500 mt-1">변화 추적</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Has Plan State -->
     <div v-else class="space-y-8 animate-fade-in-up">
-        <!-- Header Section -->
+        <!-- Header -->
         <header class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
                 <p class="text-gray-500 font-medium mb-1">Welcome back</p>
@@ -35,226 +114,331 @@
             </div>
         </header>
 
-        <!-- Main Bento Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-            <!-- 1. Hero: Calorie Balance (Span 6 on desktop) -->
-            <div class="md:col-span-8 lg:col-span-6 bg-white rounded-3xl p-8 shadow-[0_2px_20px_rgb(0,0,0,0.04)] border border-gray-100 relative overflow-hidden group">
-{{--                <div class="absolute top-0 right-0 p-8 opacity-5">--}}
-{{--                    <svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>--}}
-{{--                </div>--}}
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Today's Goal Card -->
+            <div class="lg:col-span-2 bg-gradient-to-br from-primary-600 to-accent-600 rounded-3xl p-8 text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                    <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
 
-                <div class="relative z-10 h-full flex flex-col justify-between">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h2 class="text-xl font-bold text-gray-900 font-heading">오늘의 에너지</h2>
-                            <p class="text-gray-500 text-sm mt-1">목표 달성까지</p>
-                        </div>
-                        <div class="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold uppercase tracking-wider">
-                            Daily Goal
-                        </div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-bold">
+                            @{{ activePlan.today ? activePlan.today.day_number + '일차' : '오늘' }}
+                        </span>
+                        <span v-if="activePlan.today && isAllCompletedToday" class="px-3 py-1 bg-green-400/30 backdrop-blur rounded-full text-xs font-bold text-green-100">
+                            완료!
+                        </span>
                     </div>
 
-                    <div class="flex flex-col items-center justify-center py-4">
-                        <div class="relative w-48 h-48 md:w-56 md:h-56">
-                            <!-- Circular Progress SVG -->
-                            <svg class="w-full h-full transform -rotate-90">
-                                <circle cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="12" fill="transparent" class="text-gray-100" />
-                                <circle cx="50%" cy="50%" r="45%" stroke="currentColor" stroke-width="12" fill="transparent"
-                                    :stroke-dasharray="circumference"
-                                    :stroke-dashoffset="circumference - (calorieBalance.percentage / 100) * circumference"
-                                    class="text-primary-500 transition-all duration-1000 ease-out"
-                                    stroke-linecap="round" />
-                            </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                <span class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tighter">
-                                    @{{ calorieBalance.percentage }}<span class="text-2xl md:text-3xl text-gray-400 font-medium">%</span>
-                                </span>
-                                <span class="text-sm text-gray-500 font-medium mt-1">
-                                    @{{ calorieBalance.netCalories }} / @{{ calorieBalance.targetCalories }} kcal
-                                </span>
+                    <h2 class="text-2xl font-bold mb-2 font-heading">오늘의 목표</h2>
+
+                    <div v-if="activePlan.today" class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm text-primary-100 font-medium">식단</span>
+                                <button
+                                    @click="toggleCompletion('meal')"
+                                    :class="['w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer', activePlan.today.meal_completed ? 'bg-green-400 text-white' : 'bg-white/20 text-white hover:bg-white/30']"
+                                    :disabled="completing"
+                                >
+                                    <svg v-if="activePlan.today.meal_completed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                </button>
                             </div>
+                            <p class="text-3xl font-bold">@{{ activePlan.today.total_calories }}<span class="text-lg font-normal text-primary-200 ml-1">kcal</span></p>
+                        </div>
+
+                        <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm text-primary-100 font-medium">운동</span>
+                                <button
+                                    v-if="activePlan.today.has_exercise"
+                                    @click="toggleCompletion('exercise')"
+                                    :class="['w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer', activePlan.today.exercise_completed ? 'bg-green-400 text-white' : 'bg-white/20 text-white hover:bg-white/30']"
+                                    :disabled="completing"
+                                >
+                                    <svg v-if="activePlan.today.exercise_completed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                </button>
+                                <span v-else class="text-xs text-primary-200">휴식일</span>
+                            </div>
+                            <p class="text-xl font-bold">@{{ activePlan.today.exercise_name || '휴식' }}</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4 mt-6">
-                        <div class="text-center p-3 rounded-2xl bg-gray-50 group-hover:bg-primary-50 transition-colors duration-300">
-                            <p class="text-xs text-gray-500 mb-1">섭취</p>
-                            <p class="text-lg font-bold text-gray-900">@{{ calorieBalance.consumed }}</p>
+                    <div v-else class="mt-6 p-6 bg-white/10 backdrop-blur rounded-2xl border border-white/10 text-center">
+                        <p class="text-primary-100">오늘은 플랜 기간이 아닙니다</p>
+                    </div>
+
+                    <a :href="'/diet-plan/' + activePlan.id" class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-white hover:text-primary-100 transition-colors">
+                        상세 플랜 보기
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats Column -->
+            <div class="space-y-6">
+                <!-- Progress Card -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-bold text-gray-900">플랜 진행률</h3>
+                            <p class="text-sm text-gray-500">@{{ activePlan.progress.completed_days }}/@{{ activePlan.progress.total_days }}일 완료</p>
                         </div>
-                        <div class="text-center p-3 rounded-2xl bg-gray-50 group-hover:bg-accent-50 transition-colors duration-300">
-                            <p class="text-xs text-gray-500 mb-1">소모</p>
-                            <p class="text-lg font-bold text-gray-900">@{{ calorieBalance.burned }}</p>
+                        <span class="text-2xl font-bold text-primary-600">@{{ activePlan.progress.completion_rate }}%</span>
+                    </div>
+                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-primary-500 to-accent-500 rounded-full transition-all duration-500" :style="{ width: activePlan.progress.completion_rate + '%' }"></div>
+                    </div>
+                </div>
+
+                <!-- Streak Card -->
+                <div class="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-6 text-white">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">
+                            @{{ activePlan.progress.current_streak > 0 ? '🔥' : '💪' }}
                         </div>
-                        <div class="text-center p-3 rounded-2xl bg-gray-50 group-hover:bg-gray-100 transition-colors duration-300">
-                            <p class="text-xs text-gray-500 mb-1">잔여</p>
-                            <p class="text-lg font-bold" :class="calorieBalance.remaining >= 0 ? 'text-green-600' : 'text-rose-500'">
-                                @{{ calorieBalance.remaining }}
+                        <div>
+                            <p class="text-orange-100 text-sm font-medium">연속 달성</p>
+                            <p class="text-3xl font-bold">@{{ activePlan.progress.current_streak }}일</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-white/20 flex justify-between text-sm">
+                        <span class="text-orange-100">최장 기록</span>
+                        <span class="font-bold">@{{ activePlan.progress.longest_streak }}일</span>
+                    </div>
+                </div>
+
+                <!-- Weight Loss Card -->
+                <div v-if="activePlan.progress.estimated_weight_loss_kg !== null" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center gap-4">
+                        <div :class="['w-12 h-12 rounded-2xl flex items-center justify-center', activePlan.progress.estimated_weight_loss_kg > 0 ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600']">
+                            <svg v-if="activePlan.progress.estimated_weight_loss_kg > 0" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+                            <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">예상 체중 변화</p>
+                            <p class="text-xl font-bold" :class="activePlan.progress.estimated_weight_loss_kg > 0 ? 'text-green-600' : 'text-orange-600'">
+                                @{{ activePlan.progress.estimated_weight_loss_kg > 0 ? '-' : '+' }}@{{ Math.abs(activePlan.progress.estimated_weight_loss_kg) }} kg
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- 2. Stats Grid (Span 6) -->
-            <div class="md:col-span-4 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <!-- Weight Card -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-                        </div>
-                        <span class="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">Recent</span>
-                    </div>
-                    <p class="text-gray-500 text-sm font-medium">현재 체중</p>
-                    <div class="flex items-end space-x-2 mt-1">
-                        <h3 class="text-3xl font-bold text-gray-900">
-                            @{{ todayData.weight?.current_weight || dashboard.current_weight || '-' }}
-                        </h3>
-                        <span class="text-gray-400 font-medium mb-1">kg</span>
-                    </div>
-                    <a href="{{ route('weight.index') }}" class="absolute bottom-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-primary-50 hover:text-primary-600 transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
+        <!-- Calendar Section -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-gray-900 font-heading">플랜 캘린더</h3>
+                <div class="flex items-center gap-2">
+                    <button @click="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <span class="text-sm font-bold text-gray-900 min-w-[120px] text-center">@{{ currentMonthLabel }}</span>
+                    <button @click="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="grid grid-cols-7 gap-1">
+                <!-- Day Headers -->
+                <div v-for="day in ['일', '월', '화', '수', '목', '금', '토']" :key="day" class="text-center text-xs font-bold text-gray-400 py-2">
+                    @{{ day }}
                 </div>
 
-                <!-- Streak Card -->
-                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+                <!-- Calendar Days -->
+                <div
+                    v-for="(day, index) in calendarDays"
+                    :key="index"
+                    @click="day.date && openDayModal(day)"
+                    :class="[
+                        'relative min-h-[80px] p-2 rounded-xl transition-all',
+                        day.date ? 'cursor-pointer hover:bg-gray-50' : '',
+                        day.isToday ? 'ring-2 ring-primary-500 ring-offset-2' : '',
+                        day.isInPlan ? 'bg-primary-50/50' : '',
+                        day.isPast && day.isInPlan && !day.isCompleted ? 'bg-red-50/50' : ''
+                    ]"
+                >
+                    <template v-if="day.date">
+                        <div class="text-right">
+                            <span :class="['inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold', day.isToday ? 'bg-primary-500 text-white' : 'text-gray-700']">
+                                @{{ day.dayOfMonth }}
+                            </span>
                         </div>
-                        <span class="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-lg">Hot</span>
-                    </div>
-                    <p class="text-gray-500 text-sm font-medium">연속 기록</p>
-                    <div class="flex items-end space-x-2 mt-1">
-                        <h3 class="text-3xl font-bold text-gray-900">
-                            @{{ dashboard.logging_streak_days || 0 }}
-                        </h3>
-                        <span class="text-gray-400 font-medium mb-1">일째</span>
-                    </div>
-                </div>
 
-                <!-- Quick Actions (Span 2) -->
-                <div class="col-span-1 sm:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                    <h3 class="font-bold text-gray-900 mb-4 font-heading">빠른 기록</h3>
-                    <div class="grid grid-cols-4 gap-4">
-                        <a href="{{ route('meals.create') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 group-hover:scale-110 transition-all duration-300">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                        <div v-if="day.isInPlan && day.planData" class="mt-1 space-y-1">
+                            <div class="text-xs text-gray-500 font-medium truncate">
+                                @{{ day.planData.total_calories }} kcal
                             </div>
-                            <span class="text-xs font-medium text-gray-600">식사</span>
-                        </a>
-                        <a href="{{ route('exercises.create') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-300">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            <div class="flex gap-1">
+                                <span :class="['w-5 h-5 rounded-full flex items-center justify-center text-xs', day.planData.meal_completed ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400']">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </span>
+                                <span v-if="day.planData.has_exercise" :class="['w-5 h-5 rounded-full flex items-center justify-center text-xs', day.planData.exercise_completed ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400']">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                </span>
                             </div>
-                            <span class="text-xs font-medium text-gray-600">운동</span>
-                        </a>
-                        <a href="{{ route('weight.index') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-100 group-hover:scale-110 transition-all duration-300">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-                            </div>
-                            <span class="text-xs font-medium text-gray-600">체중</span>
-                        </a>
-                        <a href="{{ route('diet-plan.index') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                            <div class="w-12 h-12 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center group-hover:bg-gray-100 group-hover:scale-110 transition-all duration-300">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                            </div>
-                            <span class="text-xs font-medium text-gray-600">플랜</span>
-                        </a>
-                    </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="mt-6 flex flex-wrap gap-4 text-xs text-gray-500">
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded bg-primary-50 border border-primary-200"></div>
+                    <span>플랜 기간</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded-full bg-green-500"></div>
+                    <span>완료</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded-full bg-gray-200"></div>
+                    <span>미완료</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded ring-2 ring-primary-500"></div>
+                    <span>오늘</span>
                 </div>
             </div>
         </div>
 
-        <!-- Secondary Grid: Details -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Nutrition Breakdown -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-bold text-gray-900 font-heading">영양 섭취</h3>
-                    <a href="{{ route('meals.index') }}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">상세보기</a>
-                </div>
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-900 mb-4 font-heading">빠른 기록</h3>
+            <div class="grid grid-cols-4 gap-4">
+                <a href="{{ route('meals.create') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    </div>
+                    <span class="text-xs font-medium text-gray-600">식사</span>
+                </a>
+                <a href="{{ route('exercises.create') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <span class="text-xs font-medium text-gray-600">운동</span>
+                </a>
+                <a href="{{ route('weight.index') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-100 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+                    </div>
+                    <span class="text-xs font-medium text-gray-600">체중</span>
+                </a>
+                <a href="{{ route('diet-plan.index') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
+                    <div class="w-12 h-12 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center group-hover:bg-gray-100 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </div>
+                    <span class="text-xs font-medium text-gray-600">플랜</span>
+                </a>
+            </div>
+        </div>
+    </div>
 
-                <div class="space-y-5">
-                    <!-- Protein -->
+    <!-- Day Detail Modal -->
+    <div v-if="showDayModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showDayModal = false">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-primary-600 to-accent-600 p-6 text-white">
+                <div class="flex items-center justify-between">
                     <div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600 font-medium">단백질</span>
-                            <span class="text-gray-900 font-bold">@{{ todayData.nutrition.protein_g }}g</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                            <div class="bg-blue-400 h-2.5 rounded-full" style="width: 30%"></div>
-                        </div>
+                        <p class="text-primary-100 text-sm font-medium">@{{ selectedDay?.planData?.day_number }}일차</p>
+                        <h3 class="text-xl font-bold">@{{ formatModalDate(selectedDay?.date) }}</h3>
                     </div>
-                    <!-- Carbs -->
-                    <div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600 font-medium">탄수화물</span>
-                            <span class="text-gray-900 font-bold">@{{ todayData.nutrition.carbs_g }}g</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                            <div class="bg-green-400 h-2.5 rounded-full" style="width: 45%"></div>
-                        </div>
-                    </div>
-                    <!-- Fat -->
-                    <div>
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600 font-medium">지방</span>
-                            <span class="text-gray-900 font-bold">@{{ todayData.nutrition.fat_g }}g</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                            <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 25%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-                    <span class="text-sm text-gray-500">오늘 식사 횟수</span>
-                    <span class="text-lg font-bold text-gray-900">@{{ todayData.nutrition.meal_count }}회</span>
+                    <button @click="showDayModal = false" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
             </div>
 
-            <!-- Exercise Activity -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-bold text-gray-900 font-heading">운동 활동</h3>
-                    <a href="{{ route('exercises.index') }}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">상세보기</a>
+            <!-- Modal Content -->
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div v-if="modalLoading" class="flex justify-center py-8">
+                    <div class="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
 
-                <div class="flex items-center space-x-4 mb-6">
-                    <div class="w-16 h-16 rounded-full border-4 border-indigo-100 flex items-center justify-center text-indigo-600">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <div v-else-if="dayDetailData">
+                    <!-- Meals Section -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-bold text-gray-900">식단</h4>
+                            <button
+                                @click="toggleModalCompletion('meal')"
+                                :class="['px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer', dayDetailData.meal_completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']"
+                                :disabled="modalCompleting"
+                            >
+                                @{{ dayDetailData.meal_completed ? '완료됨' : '완료하기' }}
+                            </button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div v-for="(meals, type) in groupedMeals" :key="type" class="bg-gray-50 rounded-xl p-4">
+                                <h5 class="text-xs font-bold text-gray-500 uppercase mb-2">@{{ mealTypeLabel(type) }}</h5>
+                                <div class="space-y-2">
+                                    <div v-for="meal in meals" :key="meal.id" class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-700">@{{ meal.food_name }}</span>
+                                        <span class="text-xs text-gray-500">@{{ Math.round(meal.calories) }} kcal</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-4 bg-primary-50 rounded-xl">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">총 칼로리</span>
+                                <span class="font-bold text-primary-700">@{{ dayDetailData.total_calories }} kcal</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-3xl font-bold text-gray-900">@{{ todayData.exercise.calories_burned }}</p>
-                        <p class="text-sm text-gray-500">소모 칼로리 (kcal)</p>
+
+                    <!-- Exercise Section -->
+                    <div v-if="dayDetailData.exercises && dayDetailData.exercises.length > 0">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-bold text-gray-900">운동</h4>
+                            <button
+                                @click="toggleModalCompletion('exercise')"
+                                :class="['px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer', dayDetailData.exercise_completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']"
+                                :disabled="modalCompleting"
+                            >
+                                @{{ dayDetailData.exercise_completed ? '완료됨' : '완료하기' }}
+                            </button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div v-for="exercise in dayDetailData.exercises" :key="exercise.id" class="bg-gray-50 rounded-xl p-4">
+                                <h5 class="font-bold text-gray-900 mb-2">@{{ exercise.exercise_name }}</h5>
+                                <div class="flex flex-wrap gap-2 text-xs">
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-lg">@{{ exercise.duration_minutes }}분</span>
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-lg">@{{ Math.round(exercise.estimated_calories_burned) }} kcal</span>
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-lg">@{{ exercise.intensity }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else class="text-center py-6 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                        <p>오늘은 휴식일입니다</p>
+                    </div>
+
+                    <!-- Tips -->
+                    <div v-if="dayDetailData.tips" class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                        <div class="flex items-start gap-3">
+                            <span class="text-xl">💡</span>
+                            <div>
+                                <h5 class="text-sm font-bold text-amber-800 mb-1">오늘의 팁</h5>
+                                <p class="text-sm text-amber-700">@{{ dayDetailData.tips }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 bg-indigo-50 rounded-2xl">
-                        <p class="text-xs text-indigo-600 mb-1 font-medium">운동 시간</p>
-                        <p class="text-xl font-bold text-gray-900">@{{ todayData.exercise.duration_minutes }}<span class="text-sm font-normal text-gray-500 ml-1">분</span></p>
-                    </div>
-                    <div class="p-4 bg-blue-50 rounded-2xl">
-                        <p class="text-xs text-blue-600 mb-1 font-medium">운동 횟수</p>
-                        <p class="text-xl font-bold text-gray-900">@{{ todayData.exercise.exercise_count }}<span class="text-sm font-normal text-gray-500 ml-1">회</span></p>
-                    </div>
-                </div>
-            </div>
-
-             <!-- Weekly Trend (Placeholder or Total Entries) -->
-             <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-center">
-                 <div class="text-center">
-                    <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4">
-                        <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-1">총 기록</h3>
-                    <p class="text-gray-500 text-sm mb-6">나의 꾸준함이 만든 결과</p>
-                    <p class="text-4xl font-bold text-gray-900 mb-2">@{{ totalEntries }}</p>
-                    <p class="text-xs text-gray-400 uppercase tracking-wide">Total Entries</p>
-                 </div>
             </div>
         </div>
     </div>
@@ -267,52 +451,79 @@ Vue.createApp({
     data() {
         return {
             loading: true,
-            dashboard: {},
-            todayData: {
-                nutrition: {
-                    calories_consumed: 0,
-                    protein_g: 0,
-                    carbs_g: 0,
-                    fat_g: 0,
-                    meal_count: 0,
-                    meals_by_type: { breakfast: 0, lunch: 0, dinner: 0, snack: 0 }
-                },
-                exercise: {
-                    calories_burned: 0,
-                    duration_minutes: 0,
-                    exercise_count: 0,
-                    exercises_by_intensity: {}
-                },
-                weight: null
-            }
+            hasActivePlan: false,
+            activePlan: null,
+            surveyStatus: { has_survey: false, is_completed: false, survey_id: null },
+            calendarData: null,
+            currentMonth: new Date(),
+            showDayModal: false,
+            selectedDay: null,
+            dayDetailData: null,
+            modalLoading: false,
+            modalCompleting: false,
+            completing: false
         }
     },
     computed: {
-        totalEntries() {
-            if (!this.dashboard.total_entries) return 0;
-            return this.dashboard.total_entries.meals +
-                   this.dashboard.total_entries.exercises +
-                   this.dashboard.total_entries.weights;
+        currentMonthLabel() {
+            return `${this.currentMonth.getFullYear()}년 ${this.currentMonth.getMonth() + 1}월`;
         },
-        circumference() {
-            return 2 * Math.PI * 45;
-        },
-        calorieBalance() {
-            const consumed = Math.round(this.todayData.nutrition?.calories_consumed || 0);
-            const burned = Math.round(this.todayData.exercise?.calories_burned || 0);
-            const targetCalories = this.dashboard.target_calories || 2000;
-            const netCalories = consumed - burned;
-            const percentage = Math.min(Math.round((consumed / targetCalories) * 100), 100);
-            const remaining = targetCalories - consumed;
+        calendarDays() {
+            const year = this.currentMonth.getFullYear();
+            const month = this.currentMonth.getMonth();
 
-            return {
-                consumed,
-                burned,
-                targetCalories,
-                netCalories,
-                percentage,
-                remaining
-            };
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startPadding = firstDay.getDay();
+            const totalDays = lastDay.getDate();
+
+            const days = [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Padding for days before the first of the month
+            for (let i = 0; i < startPadding; i++) {
+                days.push({ date: null });
+            }
+
+            // Actual days
+            for (let d = 1; d <= totalDays; d++) {
+                const date = new Date(year, month, d);
+                const dateStr = date.toISOString().split('T')[0];
+
+                let planData = null;
+                let isInPlan = false;
+                let isCompleted = false;
+
+                if (this.calendarData && this.calendarData.days) {
+                    planData = this.calendarData.days.find(day => day.date === dateStr);
+                    if (planData) {
+                        isInPlan = true;
+                        isCompleted = planData.meal_completed && (!planData.has_exercise || planData.exercise_completed);
+                    }
+                }
+
+                days.push({
+                    date: date,
+                    dayOfMonth: d,
+                    isToday: date.getTime() === today.getTime(),
+                    isPast: date < today,
+                    isInPlan,
+                    isCompleted,
+                    planData
+                });
+            }
+
+            return days;
+        },
+        isAllCompletedToday() {
+            if (!this.activePlan?.today) return false;
+            const t = this.activePlan.today;
+            return t.meal_completed && (!t.has_exercise || t.exercise_completed);
+        },
+        groupedMeals() {
+            if (!this.dayDetailData?.meals) return {};
+            return this.dayDetailData.meals;
         }
     },
     async mounted() {
@@ -322,12 +533,15 @@ Vue.createApp({
         async loadDashboard() {
             this.loading = true;
             try {
-                const statsResponse = await axios.get('/api/dashboard/quick-stats');
-                this.dashboard = statsResponse.data.data;
+                const response = await axios.get('/api/dashboard/plan-overview');
+                const data = response.data.data;
 
-                const todayResponse = await axios.get('/api/dashboard/today');
-                if (todayResponse.data.data) {
-                    this.todayData = todayResponse.data.data;
+                this.hasActivePlan = data.has_active_plan;
+                this.activePlan = data.active_plan;
+                this.surveyStatus = data.survey_status;
+
+                if (this.hasActivePlan && this.activePlan) {
+                    await this.loadCalendarData();
                 }
             } catch (error) {
                 console.error('Error loading dashboard:', error);
@@ -338,8 +552,119 @@ Vue.createApp({
                 this.loading = false;
             }
         },
-        formatDate(date) {
-            return new Date(date).toLocaleDateString('ko-KR');
+        async loadCalendarData() {
+            try {
+                const response = await axios.get(`/api/diet-plans/${this.activePlan.id}/calendar`);
+                this.calendarData = response.data.data;
+            } catch (error) {
+                console.error('Error loading calendar:', error);
+            }
+        },
+        changeMonth(delta) {
+            const newMonth = new Date(this.currentMonth);
+            newMonth.setMonth(newMonth.getMonth() + delta);
+            this.currentMonth = newMonth;
+        },
+        async openDayModal(day) {
+            if (!day.isInPlan || !day.planData) return;
+
+            this.selectedDay = day;
+            this.showDayModal = true;
+            this.modalLoading = true;
+
+            try {
+                const response = await axios.get(`/api/diet-plans/${this.activePlan.id}/day/${day.planData.day_number}`);
+                this.dayDetailData = {
+                    ...response.data.data,
+                    meal_completed: day.planData.meal_completed,
+                    exercise_completed: day.planData.exercise_completed
+                };
+            } catch (error) {
+                console.error('Error loading day detail:', error);
+                if (window.showToast) {
+                    window.showToast('상세 정보를 불러올 수 없습니다.', 'error');
+                }
+            } finally {
+                this.modalLoading = false;
+            }
+        },
+        async toggleCompletion(type) {
+            if (!this.activePlan?.today) return;
+
+            this.completing = true;
+            const currentStatus = type === 'meal' ? this.activePlan.today.meal_completed : this.activePlan.today.exercise_completed;
+
+            try {
+                const response = await axios.post(`/api/diet-plans/${this.activePlan.id}/days/${this.activePlan.today.day_number}/complete`, {
+                    type,
+                    completed: !currentStatus
+                });
+
+                // Update local state
+                if (type === 'meal') {
+                    this.activePlan.today.meal_completed = response.data.data.meal_completed;
+                } else {
+                    this.activePlan.today.exercise_completed = response.data.data.exercise_completed;
+                }
+
+                // Reload calendar and progress
+                await this.loadCalendarData();
+                await this.loadDashboard();
+
+                if (window.showToast) {
+                    window.showToast(response.data.message, 'success');
+                }
+            } catch (error) {
+                console.error('Error toggling completion:', error);
+                if (window.showToast) {
+                    window.showToast('오류가 발생했습니다.', 'error');
+                }
+            } finally {
+                this.completing = false;
+            }
+        },
+        async toggleModalCompletion(type) {
+            if (!this.dayDetailData || !this.selectedDay) return;
+
+            this.modalCompleting = true;
+            const currentStatus = type === 'meal' ? this.dayDetailData.meal_completed : this.dayDetailData.exercise_completed;
+
+            try {
+                const response = await axios.post(`/api/diet-plans/${this.activePlan.id}/days/${this.selectedDay.planData.day_number}/complete`, {
+                    type,
+                    completed: !currentStatus
+                });
+
+                // Update modal state
+                this.dayDetailData.meal_completed = response.data.data.meal_completed;
+                this.dayDetailData.exercise_completed = response.data.data.exercise_completed;
+
+                // Update calendar state
+                this.selectedDay.planData.meal_completed = response.data.data.meal_completed;
+                this.selectedDay.planData.exercise_completed = response.data.data.exercise_completed;
+
+                // Reload dashboard
+                await this.loadDashboard();
+
+                if (window.showToast) {
+                    window.showToast(response.data.message, 'success');
+                }
+            } catch (error) {
+                console.error('Error toggling completion:', error);
+                if (window.showToast) {
+                    window.showToast('오류가 발생했습니다.', 'error');
+                }
+            } finally {
+                this.modalCompleting = false;
+            }
+        },
+        formatModalDate(date) {
+            if (!date) return '';
+            return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        },
+        mealTypeLabel(type) {
+            const labels = { breakfast: '아침', lunch: '점심', dinner: '저녁', snack: '간식' };
+            return labels[type] || type;
         }
     }
 }).mount('#dashboard-app');
@@ -347,14 +672,8 @@ Vue.createApp({
 
 <style>
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translate3d(0, 20px, 0);
-    }
-    to {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-    }
+    from { opacity: 0; transform: translate3d(0, 20px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 .animate-fade-in-up {
     animation: fadeInUp 0.5s ease-out forwards;

@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DietPlan;
 use App\Models\ExerciseLog;
 use App\Models\MealLog;
+use App\Models\Survey;
+use App\Models\SurveySubmission;
 use App\Models\WeightLog;
+use App\Services\CalorieCalculationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -514,5 +518,210 @@ class DailyDashboardController extends Controller
         }
 
         return $longestStreak;
+    }
+
+    /**
+     * Get plan overview for dashboard
+     */
+    public function planOverview(CalorieCalculationService $calorieCalculationService): JsonResponse
+    {
+        $user = auth()->user();
+        $today = now()->format('Y-m-d');
+
+        // Get active plan
+        $activePlan = DietPlan::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->with(['dailyMealPlans', 'dailyExercisePlans'])
+            ->latest()
+            ->first();
+
+        // Check survey status
+        $survey = Survey::where('is_active', true)->first();
+        $surveyStatus = [
+            'has_survey' => (bool) $survey,
+            'is_completed' => false,
+            'survey_id' => $survey?->id,
+        ];
+
+        if ($survey) {
+            $surveyStatus['is_completed'] = SurveySubmission::where('user_id', $user->id)
+                ->where('survey_id', $survey->id)
+                ->exists();
+        }
+
+        // If no active plan
+        if (!$activePlan) {
+            return response()->success([
+                'has_active_plan' => false,
+                'active_plan' => null,
+                'survey_status' => $surveyStatus,
+            ], 'No active plan found');
+        }
+
+        // Calculate progress
+        $mealPlans = $activePlan->dailyMealPlans;
+        $completedDays = $mealPlans->filter(function ($mp) use ($activePlan) {
+            $hasExercise = $activePlan->dailyExercisePlans
+                ->where('day_number', $mp->day_number)
+                ->isNotEmpty();
+            return $mp->isMealCompleted() && (!$hasExercise || $mp->isExerciseCompleted());
+        })->count();
+
+        $totalDays = $mealPlans->count();
+        $completionRate = $totalDays > 0 ? round(($completedDays / $totalDays) * 100, 1) : 0;
+
+        // Calculate streaks
+        $currentStreak = $this->calculatePlanCurrentStreak($mealPlans, $activePlan->dailyExercisePlans);
+        $longestStreak = $this->calculatePlanLongestStreak($mealPlans, $activePlan->dailyExercisePlans);
+
+        // Calculate estimated weight loss
+        $avgCalories = $mealPlans->avg('total_calories');
+        $avgCaloriesBurned = $activePlan->dailyExercisePlans->avg('estimated_calories_burned') ?? 0;
+        $estimatedWeightLoss = $this->calculateEstimatedWeightLossForPlan(
+            $activePlan,
+            $avgCalories,
+            $avgCaloriesBurned,
+            $calorieCalculationService
+        );
+
+        // Get today's plan data
+        $todayPlan = $mealPlans->first(fn($mp) => $mp->date->format('Y-m-d') === $today);
+        $todayExercises = $activePlan->dailyExercisePlans->filter(fn($ep) => $ep->date->format('Y-m-d') === $today);
+
+        $todayData = null;
+        if ($todayPlan) {
+            $todayData = [
+                'day_number' => $todayPlan->day_number,
+                'date' => $todayPlan->date->format('Y-m-d'),
+                'is_plan_day' => true,
+                'meal_completed' => $todayPlan->isMealCompleted(),
+                'exercise_completed' => $todayPlan->isExerciseCompleted(),
+                'total_calories' => round($todayPlan->total_calories),
+                'has_exercise' => $todayExercises->isNotEmpty(),
+                'exercise_name' => $todayExercises->first()?->exercise_name,
+            ];
+        }
+
+        return response()->success([
+            'has_active_plan' => true,
+            'active_plan' => [
+                'id' => $activePlan->id,
+                'duration_days' => $activePlan->duration_days,
+                'start_date' => $activePlan->start_date,
+                'end_date' => $activePlan->end_date,
+                'target_calories_per_day' => $activePlan->target_calories_per_day,
+                'ai_summary' => $activePlan->ai_summary,
+                'progress' => [
+                    'total_days' => $totalDays,
+                    'completed_days' => $completedDays,
+                    'completion_rate' => $completionRate,
+                    'current_streak' => $currentStreak,
+                    'longest_streak' => $longestStreak,
+                    'estimated_weight_loss_kg' => $estimatedWeightLoss,
+                ],
+                'today' => $todayData,
+            ],
+            'survey_status' => $surveyStatus,
+        ], 'Plan overview retrieved');
+    }
+
+    /**
+     * Calculate current streak for plan
+     */
+    private function calculatePlanCurrentStreak($mealPlans, $exercisePlans): int
+    {
+        $sortedPlans = $mealPlans->sortByDesc('date')->values();
+        $streak = 0;
+
+        foreach ($sortedPlans as $mp) {
+            $hasExercise = $exercisePlans->where('day_number', $mp->day_number)->isNotEmpty();
+            $isCompleted = $mp->isMealCompleted() && (!$hasExercise || $mp->isExerciseCompleted());
+
+            if ($isCompleted) {
+                $streak++;
+            } else {
+                break;
+            }
+        }
+
+        return $streak;
+    }
+
+    /**
+     * Calculate longest streak for plan
+     */
+    private function calculatePlanLongestStreak($mealPlans, $exercisePlans): int
+    {
+        $sortedPlans = $mealPlans->sortBy('date')->values();
+        $longestStreak = 0;
+        $currentStreak = 0;
+
+        foreach ($sortedPlans as $mp) {
+            $hasExercise = $exercisePlans->where('day_number', $mp->day_number)->isNotEmpty();
+            $isCompleted = $mp->isMealCompleted() && (!$hasExercise || $mp->isExerciseCompleted());
+
+            if ($isCompleted) {
+                $currentStreak++;
+                $longestStreak = max($longestStreak, $currentStreak);
+            } else {
+                $currentStreak = 0;
+            }
+        }
+
+        return $longestStreak;
+    }
+
+    /**
+     * Calculate estimated weight loss for a plan
+     */
+    private function calculateEstimatedWeightLossForPlan(
+        DietPlan $dietPlan,
+        ?float $avgCaloriesIntake,
+        float $avgCaloriesBurned,
+        CalorieCalculationService $calorieCalculationService
+    ): ?float {
+        if (!$avgCaloriesIntake) {
+            return null;
+        }
+
+        $submission = $dietPlan->surveySubmission;
+        if (!$submission) {
+            return null;
+        }
+
+        $surveyData = $submission->completion_data ?? [];
+
+        $gender = $surveyData['성별'] ?? null;
+        $age = isset($surveyData['나이']) ? (int) $surveyData['나이'] : null;
+        $weight = isset($surveyData['현재 체중 (kg)']) ? (float) $surveyData['현재 체중 (kg)'] : null;
+        $height = isset($surveyData['키 (cm)']) ? (float) $surveyData['키 (cm)'] : null;
+        $activityLevel = $surveyData['일일 활동량'] ?? null;
+
+        if (!$gender || !$age || !$weight || !$height || !$activityLevel) {
+            return null;
+        }
+
+        $activityMapping = [
+            '거의 운동 안 함' => 'sedentary',
+            '좌식 생활' => 'sedentary',
+            '주 1-3회 가벼운 운동' => 'lightly_active',
+            '가벼운 활동' => 'lightly_active',
+            '주 3-5회 중간 강도 운동' => 'moderately_active',
+            '보통 활동' => 'moderately_active',
+            '주 6-7회 고강도 운동' => 'very_active',
+            '매우 활동적' => 'very_active',
+            '하루 2회 이상 운동' => 'extra_active',
+        ];
+
+        $mappedActivityLevel = $activityMapping[$activityLevel] ?? 'sedentary';
+
+        $bmr = $calorieCalculationService->calculateBMR($gender, $weight, $height, $age);
+        $tdee = $calorieCalculationService->calculateTDEE($bmr, $mappedActivityLevel);
+
+        $dailyDeficit = $tdee - $avgCaloriesIntake + $avgCaloriesBurned;
+        $durationDays = $dietPlan->duration_days ?? 7;
+        $totalDeficit = $dailyDeficit * $durationDays;
+
+        return round($totalDeficit / 7700, 2);
     }
 }

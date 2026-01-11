@@ -20,6 +20,8 @@ class DailyMealPlan extends Model
         'total_carbs_g',
         'total_fat_g',
         'tips',
+        'meal_completed_at',
+        'exercise_completed_at',
     ];
 
     protected $casts = [
@@ -28,6 +30,8 @@ class DailyMealPlan extends Model
         'total_protein_g' => 'decimal:2',
         'total_carbs_g' => 'decimal:2',
         'total_fat_g' => 'decimal:2',
+        'meal_completed_at' => 'datetime',
+        'exercise_completed_at' => 'datetime',
     ];
 
     /**
@@ -96,5 +100,61 @@ class DailyMealPlan extends Model
             'total_carbs_g' => $totals->total_carbs_g ?? 0,
             'total_fat_g' => $totals->total_fat_g ?? 0,
         ]);
+    }
+
+    /**
+     * Check if meal is completed
+     */
+    public function isMealCompleted(): bool
+    {
+        return $this->meal_completed_at !== null;
+    }
+
+    /**
+     * Check if exercise is completed
+     */
+    public function isExerciseCompleted(): bool
+    {
+        return $this->exercise_completed_at !== null;
+    }
+
+    /**
+     * Check if both meal and exercise are completed
+     */
+    public function isFullyCompleted(): bool
+    {
+        return $this->isMealCompleted() && $this->isExerciseCompleted();
+    }
+
+    /**
+     * Mark meal as completed
+     */
+    public function markMealCompleted(): void
+    {
+        $this->update(['meal_completed_at' => now()]);
+    }
+
+    /**
+     * Mark meal as incomplete
+     */
+    public function unmarkMealCompleted(): void
+    {
+        $this->update(['meal_completed_at' => null]);
+    }
+
+    /**
+     * Mark exercise as completed
+     */
+    public function markExerciseCompleted(): void
+    {
+        $this->update(['exercise_completed_at' => now()]);
+    }
+
+    /**
+     * Mark exercise as incomplete
+     */
+    public function unmarkExerciseCompleted(): void
+    {
+        $this->update(['exercise_completed_at' => null]);
     }
 }

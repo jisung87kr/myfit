@@ -710,4 +710,150 @@ class DietPlanController extends Controller
 
         return round($weightLossKg, 2);
     }
+
+    /**
+     * Get calendar data for a diet plan
+     */
+    public function getCalendar(int $id): JsonResponse
+    {
+        $dietPlan = DietPlan::with(['dailyMealPlans', 'dailyExercisePlans'])
+            ->find($id);
+
+        if (!$dietPlan) {
+            return response()->notFound('Diet plan not found');
+        }
+
+        if ($dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this diet plan');
+        }
+
+        $days = $dietPlan->dailyMealPlans->map(function ($mealPlan) use ($dietPlan) {
+            $hasExercise = $dietPlan->dailyExercisePlans
+                ->where('day_number', $mealPlan->day_number)
+                ->isNotEmpty();
+
+            return [
+                'day_number' => $mealPlan->day_number,
+                'date' => $mealPlan->date->format('Y-m-d'),
+                'total_calories' => round($mealPlan->total_calories),
+                'meal_completed' => $mealPlan->isMealCompleted(),
+                'meal_completed_at' => $mealPlan->meal_completed_at,
+                'exercise_completed' => $mealPlan->isExerciseCompleted(),
+                'exercise_completed_at' => $mealPlan->exercise_completed_at,
+                'has_exercise' => $hasExercise,
+            ];
+        });
+
+        // Calculate statistics
+        $completedDays = $days->filter(function ($d) {
+            return $d['meal_completed'] && (!$d['has_exercise'] || $d['exercise_completed']);
+        })->count();
+
+        return response()->success([
+            'plan_id' => $dietPlan->id,
+            'start_date' => $dietPlan->start_date,
+            'end_date' => $dietPlan->end_date,
+            'duration_days' => $dietPlan->duration_days,
+            'days' => $days->values(),
+            'statistics' => [
+                'total_days' => $days->count(),
+                'completed_days' => $completedDays,
+                'completion_rate' => $days->count() > 0 ? round(($completedDays / $days->count()) * 100, 1) : 0,
+                'current_streak' => $this->calculateCurrentStreak($days),
+                'longest_streak' => $this->calculateLongestStreak($days),
+            ],
+        ], 'Calendar data retrieved');
+    }
+
+    /**
+     * Toggle day completion
+     */
+    public function toggleDayCompletion(Request $request, int $planId, int $dayNumber): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'type' => 'required|in:meal,exercise',
+            'completed' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->validationError($validator->errors());
+        }
+
+        $dietPlan = DietPlan::find($planId);
+
+        if (!$dietPlan) {
+            return response()->notFound('Diet plan not found');
+        }
+
+        if ($dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this diet plan');
+        }
+
+        $dailyMealPlan = $dietPlan->dailyMealPlans()
+            ->where('day_number', $dayNumber)
+            ->first();
+
+        if (!$dailyMealPlan) {
+            return response()->notFound('Day plan not found');
+        }
+
+        $field = $request->type === 'meal' ? 'meal_completed_at' : 'exercise_completed_at';
+        $dailyMealPlan->update([
+            $field => $request->completed ? now() : null,
+        ]);
+
+        $message = $request->type === 'meal'
+            ? ($request->completed ? '식단 완료 처리되었습니다.' : '식단 완료가 취소되었습니다.')
+            : ($request->completed ? '운동 완료 처리되었습니다.' : '운동 완료가 취소되었습니다.');
+
+        return response()->success([
+            'day_number' => $dayNumber,
+            'meal_completed' => $dailyMealPlan->isMealCompleted(),
+            'meal_completed_at' => $dailyMealPlan->meal_completed_at,
+            'exercise_completed' => $dailyMealPlan->isExerciseCompleted(),
+            'exercise_completed_at' => $dailyMealPlan->exercise_completed_at,
+        ], $message);
+    }
+
+    /**
+     * Calculate current streak of completed days
+     */
+    private function calculateCurrentStreak($days): int
+    {
+        $sortedDays = $days->sortByDesc('date')->values();
+        $streak = 0;
+
+        foreach ($sortedDays as $day) {
+            $isCompleted = $day['meal_completed'] && (!$day['has_exercise'] || $day['exercise_completed']);
+            if ($isCompleted) {
+                $streak++;
+            } else {
+                break;
+            }
+        }
+
+        return $streak;
+    }
+
+    /**
+     * Calculate longest streak of completed days
+     */
+    private function calculateLongestStreak($days): int
+    {
+        $sortedDays = $days->sortBy('date')->values();
+        $longestStreak = 0;
+        $currentStreak = 0;
+
+        foreach ($sortedDays as $day) {
+            $isCompleted = $day['meal_completed'] && (!$day['has_exercise'] || $day['exercise_completed']);
+            if ($isCompleted) {
+                $currentStreak++;
+                $longestStreak = max($longestStreak, $currentStreak);
+            } else {
+                $currentStreak = 0;
+            }
+        }
+
+        return $longestStreak;
+    }
 }

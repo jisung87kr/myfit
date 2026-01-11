@@ -115,6 +115,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{id}', [DietPlanController::class, 'destroy']);
         Route::get('/{id}/day/{day}', [DietPlanController::class, 'showDay']);
         Route::post('/{id}/regenerate', [DietPlanController::class, 'regenerate']);
+        Route::get('/{id}/calendar', [DietPlanController::class, 'getCalendar']);
+        Route::post('/{planId}/days/{dayNumber}/complete', [DietPlanController::class, 'toggleDayCompletion']);
 
         // Meal replacement
         Route::put('/meals/{mealItemId}/replace', [DietPlanController::class, 'replaceMealItem']);
@@ -166,6 +168,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/monthly-summary', [DailyDashboardController::class, 'monthlySummary']);
         Route::get('/quick-stats', [DailyDashboardController::class, 'quickStats']);
         Route::get('/streaks', [DailyDashboardController::class, 'streaks']);
+        Route::get('/plan-overview', [DailyDashboardController::class, 'planOverview']);
     });
 
     // Badges
