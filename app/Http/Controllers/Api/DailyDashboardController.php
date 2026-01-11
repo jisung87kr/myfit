@@ -528,6 +528,20 @@ class DailyDashboardController extends Controller
         $user = auth()->user();
         $today = now()->format('Y-m-d');
 
+        // Get all plans for selection (exclude generating/failed)
+        $allPlans = DietPlan::where('user_id', $user->id)
+            ->whereNotIn('status', ['generating', 'failed'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($plan) => [
+                'id' => $plan->id,
+                'status' => $plan->status,
+                'duration_days' => $plan->duration_days,
+                'start_date' => $plan->start_date->format('Y-m-d'),
+                'end_date' => $plan->end_date->format('Y-m-d'),
+                'ai_summary' => $plan->ai_summary,
+            ]);
+
         // Get active plan
         $activePlan = DietPlan::where('user_id', $user->id)
             ->where('status', 'active')
@@ -554,6 +568,7 @@ class DailyDashboardController extends Controller
             return response()->success([
                 'has_active_plan' => false,
                 'active_plan' => null,
+                'all_plans' => $allPlans,
                 'survey_status' => $surveyStatus,
             ], 'No active plan found');
         }
@@ -621,6 +636,7 @@ class DailyDashboardController extends Controller
                 ],
                 'today' => $todayData,
             ],
+            'all_plans' => $allPlans,
             'survey_status' => $surveyStatus,
         ], 'Plan overview retrieved');
     }

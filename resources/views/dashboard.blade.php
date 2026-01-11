@@ -22,6 +22,44 @@
             </h1>
         </header>
 
+        <!-- Plan Selection (when plans exist but none active) -->
+        <div v-if="allPlans && allPlans.length > 0" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-900 font-heading">플랜 선택하기</h3>
+                    <p class="text-sm text-gray-500">진행할 플랜을 선택하세요.</p>
+                </div>
+                <a href="{{ route('diet-plan.index') }}" class="text-sm text-primary-600 font-bold hover:text-primary-700">
+                    전체 보기 &rarr;
+                </a>
+            </div>
+            <div class="space-y-3">
+                <div
+                    v-for="plan in allPlans.slice(0, 3)"
+                    :key="plan.id"
+                    class="flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50/30 transition-all"
+                >
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-gray-900">@{{ plan.duration_days }}일 플랜</span>
+                            <span :class="['px-2 py-0.5 text-xs font-bold rounded-lg', getStatusClass(plan.status)]">
+                                @{{ getStatusLabel(plan.status) }}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-500">@{{ plan.start_date }} ~ @{{ plan.end_date }}</p>
+                    </div>
+                    <button
+                        @click="activatePlan(plan)"
+                        :disabled="activating"
+                        class="px-4 py-2 bg-primary-500 text-white font-bold text-sm rounded-xl hover:bg-primary-600 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                        <span v-if="activating && activatingPlanId === plan.id">진행중...</span>
+                        <span v-else>진행하기</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- CTA Section -->
         <div class="bg-gradient-to-br from-primary-600 to-accent-600 rounded-3xl p-12 text-center text-white relative overflow-hidden">
             <div class="absolute inset-0 opacity-10">
@@ -87,15 +125,68 @@
                     {{ auth()->user()->name }}님, <span class="text-primary-600">오늘도 화이팅!</span>
                 </h1>
             </div>
-            <div class="flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-5 py-2.5 rounded-2xl shadow-sm border border-gray-100">
-                <div class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-primary-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
+            <div class="flex items-center gap-3">
+                <!-- Plan Selector -->
+                <div v-if="allPlans && allPlans.length > 1" class="relative">
+                    <button
+                        @click="showPlanSelector = !showPlanSelector"
+                        class="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl shadow-sm border border-gray-100 hover:border-primary-200 transition-colors cursor-pointer"
+                    >
+                        <div class="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center text-primary-600">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs text-gray-500 font-medium">현재 플랜</p>
+                            <p class="text-sm text-gray-900 font-bold">@{{ activePlan.duration_days }}일 플랜</p>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div v-if="showPlanSelector" class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100">
+                            <p class="text-xs font-bold text-gray-400 uppercase">플랜 변경</p>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto">
+                            <button
+                                v-for="plan in allPlans"
+                                :key="plan.id"
+                                @click="switchPlan(plan)"
+                                :disabled="activating || plan.id === activePlan.id"
+                                :class="[
+                                    'w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between cursor-pointer',
+                                    plan.id === activePlan.id ? 'bg-primary-50' : ''
+                                ]"
+                            >
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-gray-900">@{{ plan.duration_days }}일 플랜</span>
+                                        <span v-if="plan.id === activePlan.id" class="px-2 py-0.5 text-xs font-bold rounded-lg bg-primary-100 text-primary-700">현재</span>
+                                        <span v-else :class="['px-2 py-0.5 text-xs font-bold rounded-lg', getStatusClass(plan.status)]">
+                                            @{{ getStatusLabel(plan.status) }}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-0.5">@{{ plan.start_date }} ~ @{{ plan.end_date }}</p>
+                                </div>
+                                <svg v-if="plan.id === activePlan.id" class="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-sm">
-                    <p class="text-gray-500 font-medium">오늘 날짜</p>
-                    <p class="text-gray-900 font-bold">{{ now()->format('Y년 m월 d일') }}</p>
+
+                <!-- Date Display -->
+                <div class="flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-5 py-2.5 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-primary-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div class="text-sm">
+                        <p class="text-gray-500 font-medium">오늘 날짜</p>
+                        <p class="text-gray-900 font-bold">{{ now()->format('Y년 m월 d일') }}</p>
+                    </div>
                 </div>
             </div>
         </header>
@@ -433,15 +524,19 @@ Vue.createApp({
             loading: true,
             hasActivePlan: false,
             activePlan: null,
+            allPlans: [],
             surveyStatus: { has_survey: false, is_completed: false, survey_id: null },
             calendarData: null,
             currentMonth: new Date(),
             showDayModal: false,
+            showPlanSelector: false,
             selectedDay: null,
             dayDetailData: null,
             modalLoading: false,
             modalCompleting: false,
-            completing: false
+            completing: false,
+            activating: false,
+            activatingPlanId: null
         }
     },
     computed: {
@@ -508,6 +603,10 @@ Vue.createApp({
     },
     async mounted() {
         await this.loadDashboard();
+        document.addEventListener('click', this.handleOutsideClick);
+    },
+    beforeUnmount() {
+        document.removeEventListener('click', this.handleOutsideClick);
     },
     methods: {
         async loadDashboard() {
@@ -518,6 +617,7 @@ Vue.createApp({
 
                 this.hasActivePlan = data.has_active_plan;
                 this.activePlan = data.active_plan;
+                this.allPlans = data.all_plans || [];
                 this.surveyStatus = data.survey_status;
 
                 if (this.hasActivePlan && this.activePlan) {
@@ -645,6 +745,60 @@ Vue.createApp({
         mealTypeLabel(type) {
             const labels = { breakfast: '아침', lunch: '점심', dinner: '저녁', snack: '간식' };
             return labels[type] || type;
+        },
+        getStatusLabel(status) {
+            const labels = {
+                'active': '진행중',
+                'completed': '완료',
+                'archived': '보관됨',
+                'paused': '일시정지'
+            };
+            return labels[status] || status;
+        },
+        getStatusClass(status) {
+            const classes = {
+                'active': 'bg-green-100 text-green-700',
+                'completed': 'bg-blue-100 text-blue-700',
+                'archived': 'bg-gray-100 text-gray-700',
+                'paused': 'bg-yellow-100 text-yellow-700'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-700';
+        },
+        async activatePlan(plan) {
+            this.activating = true;
+            this.activatingPlanId = plan.id;
+            try {
+                const response = await axios.post(`/api/diet-plans/${plan.id}/activate`);
+                if (response.data.success) {
+                    if (window.showToast) window.showToast(response.data.message, 'success');
+                    await this.loadDashboard();
+                }
+            } catch (error) {
+                if (error.response?.status === 409) {
+                    const overlappingPlans = error.response.data.errors?.overlapping_plans || [];
+                    let message = error.response.data.message + '\n\n겹치는 플랜:\n';
+                    overlappingPlans.forEach(p => {
+                        message += `- ${p.duration_days}일 플랜 (${p.start_date} ~ ${p.end_date})\n`;
+                    });
+                    alert(message);
+                } else {
+                    const errorMsg = error.response?.data?.message || '플랜 활성화에 실패했습니다.';
+                    if (window.showToast) window.showToast(errorMsg, 'error');
+                }
+            } finally {
+                this.activating = false;
+                this.activatingPlanId = null;
+            }
+        },
+        async switchPlan(plan) {
+            if (plan.id === this.activePlan?.id) return;
+            this.showPlanSelector = false;
+            await this.activatePlan(plan);
+        },
+        handleOutsideClick(e) {
+            if (this.showPlanSelector && !e.target.closest('.relative')) {
+                this.showPlanSelector = false;
+            }
         }
     }
 }).mount('#dashboard-app');

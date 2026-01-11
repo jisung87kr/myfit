@@ -48,6 +48,7 @@ class DietPlanController extends Controller
 
                 return [
                     'id' => $plan->id,
+                    'name' => $plan->name,
                     'status' => $plan->status,
                     'duration_days' => $plan->duration_days,
                     'start_date' => $plan->start_date,
@@ -231,6 +232,37 @@ class DietPlanController extends Controller
         $dietPlan->delete();
 
         return response()->success(null, 'Diet plan deleted successfully');
+    }
+
+    /**
+     * Update diet plan name
+     */
+    public function updateName(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->validationError($validator->errors());
+        }
+
+        $dietPlan = DietPlan::find($id);
+
+        if (!$dietPlan) {
+            return response()->notFound('Diet plan not found');
+        }
+
+        if ($dietPlan->user_id !== auth()->id()) {
+            return response()->forbidden('You do not have access to this diet plan');
+        }
+
+        $dietPlan->update(['name' => $request->name]);
+
+        return response()->success([
+            'id' => $dietPlan->id,
+            'name' => $dietPlan->name,
+        ], '플랜명이 수정되었습니다.');
     }
 
     /**

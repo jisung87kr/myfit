@@ -113,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/active', [DietPlanController::class, 'getActive']);
         Route::get('/{id}', [DietPlanController::class, 'show']);
         Route::delete('/{id}', [DietPlanController::class, 'destroy']);
+        Route::patch('/{id}/name', [DietPlanController::class, 'updateName']);
         Route::get('/{id}/day/{day}', [DietPlanController::class, 'showDay']);
         Route::post('/{id}/regenerate', [DietPlanController::class, 'regenerate']);
         Route::get('/{id}/calendar', [DietPlanController::class, 'getCalendar']);

@@ -68,7 +68,22 @@
                             <div v-if="plan.status === 'generating'" class="w-6 h-6 flex-shrink-0">
                                 <div class="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
                             </div>
-                            <h3 class="text-lg font-bold text-gray-900">@{{ plan.duration_days }}일 식단 플랜</h3>
+                            <!-- Editable Plan Name -->
+                            <div v-if="editingPlanId === plan.id" class="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    v-model="editingName"
+                                    @keyup.enter="savePlanName(plan)"
+                                    @keyup.escape="cancelEdit"
+                                    @blur="savePlanName(plan)"
+                                    class="text-lg font-bold text-gray-900 border-b-2 border-primary-500 bg-transparent focus:outline-none px-0 py-0"
+                                    ref="nameInput"
+                                />
+                            </div>
+                            <h3 v-else @click="startEdit(plan)" class="text-lg font-bold text-gray-900 cursor-pointer hover:text-primary-600 transition-colors group flex items-center gap-1">
+                                @{{ plan.name || plan.duration_days + '일 식단 플랜' }}
+                                <svg class="w-4 h-4 text-gray-300 group-hover:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </h3>
                             <span :class="['px-2.5 py-1 text-xs font-bold rounded-lg', getStatusClass(plan.status)]">
                                 @{{ getStatusLabel(plan.status) }}
                             </span>
@@ -299,6 +314,8 @@ Vue.createApp({
             deleting: false,
             errorMessage: '',
             modalStep: 1,
+            editingPlanId: null,
+            editingName: '',
             generateForm: {
                 duration_days: 7,
                 surveyOption: null,
@@ -494,6 +511,47 @@ Vue.createApp({
             const total = end - start;
             const elapsed = now - start;
             return Math.min(100, Math.max(0, (elapsed / total) * 100));
+        },
+        startEdit(plan) {
+            if (plan.status === 'generating') return;
+            this.editingPlanId = plan.id;
+            this.editingName = plan.name || `${plan.duration_days}일 식단 플랜`;
+            this.$nextTick(() => {
+                const input = this.$refs.nameInput;
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            });
+        },
+        cancelEdit() {
+            this.editingPlanId = null;
+            this.editingName = '';
+        },
+        async savePlanName(plan) {
+            if (!this.editingName.trim()) {
+                this.cancelEdit();
+                return;
+            }
+            const newName = this.editingName.trim();
+            const originalName = plan.name || `${plan.duration_days}일 식단 플랜`;
+
+            if (newName === originalName) {
+                this.cancelEdit();
+                return;
+            }
+
+            try {
+                const response = await axios.patch(`/api/diet-plans/${plan.id}/name`, { name: newName });
+                if (response.data.success) {
+                    plan.name = response.data.data.name;
+                    if (window.showToast) window.showToast(response.data.message, 'success');
+                }
+            } catch (error) {
+                if (window.showToast) window.showToast('플랜명 수정에 실패했습니다.', 'error');
+            } finally {
+                this.cancelEdit();
+            }
         }
     }
 }).mount('#diet-plan-list-app');

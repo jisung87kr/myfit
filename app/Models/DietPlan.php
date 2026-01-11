@@ -14,6 +14,7 @@ class DietPlan extends Model
     protected $fillable = [
         'user_id',
         'survey_submission_id',
+        'name',
         'status',
         'start_date',
         'end_date',
