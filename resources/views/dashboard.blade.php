@@ -59,34 +59,20 @@
         </div>
 
         <!-- Quick Links -->
-        <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
             <a href="{{ route('survey.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary-200 transition-all group">
                 <div class="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </div>
                 <h3 class="font-bold text-gray-900">설문하기</h3>
-                <p class="text-sm text-gray-500 mt-1">맞춤 플랜 생성</p>
+                <p class="text-sm text-gray-500 mt-1">맞춤 플랜을 위한 건강 설문</p>
             </a>
-            <a href="{{ route('meals.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-emerald-200 transition-all group">
-                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            <a href="{{ route('diet-plan.index') }}" class="bg-gradient-to-br from-primary-50 to-accent-50 rounded-2xl p-6 shadow-sm border-2 border-primary-200 hover:shadow-lg hover:border-primary-300 transition-all group">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
                 </div>
-                <h3 class="font-bold text-gray-900">식사 기록</h3>
-                <p class="text-sm text-gray-500 mt-1">오늘 먹은 것</p>
-            </a>
-            <a href="{{ route('exercises.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all group">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                </div>
-                <h3 class="font-bold text-gray-900">운동 기록</h3>
-                <p class="text-sm text-gray-500 mt-1">활동 추가</p>
-            </a>
-            <a href="{{ route('weight.index') }}" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-purple-200 transition-all group">
-                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-                </div>
-                <h3 class="font-bold text-gray-900">체중 기록</h3>
-                <p class="text-sm text-gray-500 mt-1">변화 추적</p>
+                <h3 class="font-bold text-gray-900">플랜 생성하기</h3>
+                <p class="text-sm text-gray-500 mt-1">AI 맞춤 식단 & 운동 플랜</p>
             </a>
         </div>
     </div>
@@ -312,31 +298,25 @@
 
         <!-- Quick Actions -->
         <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-            <h3 class="font-bold text-gray-900 mb-4 font-heading">빠른 기록</h3>
-            <div class="grid grid-cols-4 gap-4">
-                <a href="{{ route('meals.create') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-100 group-hover:scale-110 transition-all duration-300">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                    </div>
-                    <span class="text-xs font-medium text-gray-600">식사</span>
-                </a>
-                <a href="{{ route('exercises.create') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-110 transition-all duration-300">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <span class="text-xs font-medium text-gray-600">운동</span>
-                </a>
-                <a href="{{ route('weight.index') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                    <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-100 group-hover:scale-110 transition-all duration-300">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-                    </div>
-                    <span class="text-xs font-medium text-gray-600">체중</span>
-                </a>
-                <a href="{{ route('diet-plan.index') }}" class="flex flex-col items-center gap-2 group cursor-pointer">
-                    <div class="w-12 h-12 rounded-2xl bg-gray-50 text-gray-600 flex items-center justify-center group-hover:bg-gray-100 group-hover:scale-110 transition-all duration-300">
+            <h3 class="font-bold text-gray-900 mb-4 font-heading">빠른 메뉴</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <a :href="'/diet-plan/' + activePlan.id" class="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-primary-50 to-accent-50 border-2 border-primary-200 hover:shadow-md hover:border-primary-300 transition-all group cursor-pointer">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 text-white flex items-center justify-center group-hover:scale-110 transition-all duration-300">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     </div>
-                    <span class="text-xs font-medium text-gray-600">플랜</span>
+                    <div>
+                        <span class="font-bold text-gray-900">상세 플랜</span>
+                        <p class="text-xs text-gray-500">식단 & 운동 상세 보기</p>
+                    </div>
+                </a>
+                <a href="{{ route('diet-plan.index') }}" class="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all group cursor-pointer">
+                    <div class="w-12 h-12 rounded-2xl bg-gray-100 text-gray-600 flex items-center justify-center group-hover:bg-gray-200 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    </div>
+                    <div>
+                        <span class="font-bold text-gray-900">새 플랜</span>
+                        <p class="text-xs text-gray-500">새로운 플랜 생성하기</p>
+                    </div>
                 </a>
             </div>
         </div>

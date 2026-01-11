@@ -114,27 +114,6 @@
                                 </svg>
                                 <span>대시보드</span>
                             </a>
-                            <a href="{{ route('meals.index') }}"
-                               class="@if(request()->routeIs('meals.*')) bg-primary-50 text-primary-700 @else text-gray-600 hover:text-gray-900 hover:bg-gray-50 @endif px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                </svg>
-                                <span>식사 기록</span>
-                            </a>
-                            <a href="{{ route('exercises.index') }}"
-                               class="@if(request()->routeIs('exercises.*')) bg-primary-50 text-primary-700 @else text-gray-600 hover:text-gray-900 hover:bg-gray-50 @endif px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                </svg>
-                                <span>운동</span>
-                            </a>
-                            <a href="{{ route('weight.index') }}"
-                               class="@if(request()->routeIs('weight.*')) bg-primary-50 text-primary-700 @else text-gray-600 hover:text-gray-900 hover:bg-gray-50 @endif px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
-                                </svg>
-                                <span>체중</span>
-                            </a>
                             <a href="{{ route('diet-plan.index') }}"
                                class="@if(request()->routeIs('diet-plan.*')) bg-primary-50 text-primary-700 @else text-gray-600 hover:text-gray-900 hover:bg-gray-50 @endif px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center space-x-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,15 +124,16 @@
                         </div>
                     </div>
 
-                    <!-- User Menu -->
-                    <div class="flex items-center space-x-4">
+                    <!-- User Menu & Mobile Menu Button -->
+                    <div class="flex items-center space-x-2">
+                        <!-- User Menu -->
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" class="flex items-center space-x-3 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="w-8 h-8 bg-gradient-to-br from-primary-400 to-accent-400 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md">
                                     {{ substr(auth()->user()->name, 0, 1) }}
                                 </div>
                                 <span class="hidden sm:block text-sm font-medium text-gray-700">{{ auth()->user()->name }}</span>
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="hidden sm:block w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                 </svg>
                             </button>
@@ -186,11 +166,9 @@
                                 </form>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Mobile Menu Button -->
-                    <div class="flex items-center md:hidden">
-                        <button type="button" class="p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors" x-data @click="$dispatch('toggle-mobile-menu')">
+                        <!-- Mobile Menu Button -->
+                        <button type="button" class="md:hidden p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors" x-data @click="$dispatch('toggle-mobile-menu')">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                             </svg>
@@ -203,9 +181,6 @@
             <div class="md:hidden border-t border-gray-100" x-data="{ open: false }" @toggle-mobile-menu.window="open = !open" x-show="open" x-collapse>
                 <div class="px-4 py-3 space-y-1">
                     <a href="{{ route('dashboard') }}" class="@if(request()->routeIs('dashboard')) bg-primary-50 text-primary-700 @else text-gray-600 @endif block px-4 py-3 rounded-xl text-sm font-medium">대시보드</a>
-                    <a href="{{ route('meals.index') }}" class="@if(request()->routeIs('meals.*')) bg-primary-50 text-primary-700 @else text-gray-600 @endif block px-4 py-3 rounded-xl text-sm font-medium">식사 기록</a>
-                    <a href="{{ route('exercises.index') }}" class="@if(request()->routeIs('exercises.*')) bg-primary-50 text-primary-700 @else text-gray-600 @endif block px-4 py-3 rounded-xl text-sm font-medium">운동</a>
-                    <a href="{{ route('weight.index') }}" class="@if(request()->routeIs('weight.*')) bg-primary-50 text-primary-700 @else text-gray-600 @endif block px-4 py-3 rounded-xl text-sm font-medium">체중</a>
                     <a href="{{ route('diet-plan.index') }}" class="@if(request()->routeIs('diet-plan.*')) bg-primary-50 text-primary-700 @else text-gray-600 @endif block px-4 py-3 rounded-xl text-sm font-medium">플랜</a>
                 </div>
             </div>

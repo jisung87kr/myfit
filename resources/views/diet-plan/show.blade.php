@@ -180,14 +180,12 @@
                         title="아침"
                         icon="sunrise"
                         :meals="getMealsByType('breakfast')"
-                        v-on:use-meal="useMeal"
                     ></meal-type-section>
 
                     <meal-type-section
                         title="점심"
                         icon="sun"
                         :meals="getMealsByType('lunch')"
-                        v-on:use-meal="useMeal"
                         class="mt-6"
                     ></meal-type-section>
 
@@ -195,7 +193,6 @@
                         title="저녁"
                         icon="moon"
                         :meals="getMealsByType('dinner')"
-                        v-on:use-meal="useMeal"
                         class="mt-6"
                     ></meal-type-section>
 
@@ -203,7 +200,6 @@
                         title="간식"
                         icon="cake"
                         :meals="getMealsByType('snack')"
-                        v-on:use-meal="useMeal"
                         class="mt-6"
                     ></meal-type-section>
                 </div>
@@ -253,60 +249,6 @@
         </div>
     </div>
 
-    <!-- Use Meal Modal -->
-    <div v-if="showUseMealModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" @click.self="showUseMealModal = false">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 transform transition-all scale-100">
-            <h3 class="text-xl font-bold text-gray-900 mb-6 font-heading flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                </div>
-                식단 적용
-            </h3>
-
-            <div v-if="selectedMeal" class="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100">
-                <h4 class="font-bold text-gray-900 mb-2">@{{ selectedMeal.food_name }}</h4>
-                <div class="flex flex-wrap gap-2 text-xs font-bold">
-                    <span class="text-gray-500">@{{ Math.round(selectedMeal.calories) }} kcal</span>
-                    <span class="text-blue-600">P @{{ Math.round(selectedMeal.protein_g) }}g</span>
-                    <span class="text-amber-600">C @{{ Math.round(selectedMeal.carbs_g) }}g</span>
-                    <span class="text-orange-600">F @{{ Math.round(selectedMeal.fat_g) }}g</span>
-                </div>
-            </div>
-
-            <form @submit.prevent="applyMeal" class="space-y-5">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">적용 날짜</label>
-                    <input
-                        type="date"
-                        v-model="useMealForm.date"
-                        required
-                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all font-medium text-gray-900"
-                    >
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">시간</label>
-                    <input
-                        type="time"
-                        v-model="useMealForm.time"
-                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary-500 transition-all font-medium text-gray-900"
-                    >
-                </div>
-
-                <div v-if="useMealError" class="p-3 bg-red-50 rounded-xl text-red-600 text-sm font-medium">
-                    @{{ useMealError }}
-                </div>
-
-                <div class="flex gap-3 pt-2">
-                    <button type="button" @click="showUseMealModal = false" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-colors cursor-pointer">취소</button>
-                    <button type="submit" :disabled="applying" class="flex-[2] py-3 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-colors disabled:opacity-50 cursor-pointer">
-                        <span v-if="applying">적용 중...</span>
-                        <span v-else>기록에 추가</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
 @endsection
 
@@ -314,7 +256,6 @@
 <script>
 const MealTypeSection = {
     props: ['title', 'icon', 'meals'],
-    emits: ['useMeal'],
     template: `
         <div v-if="meals.length > 0" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -328,8 +269,8 @@ const MealTypeSection = {
             </h3>
 
             <div class="space-y-3">
-                <div v-for="meal in meals" :key="meal.id" class="group border border-gray-100 rounded-2xl p-4 hover:border-primary-200 hover:bg-primary-50/30 transition-all flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                    <div class="flex-1">
+                <div v-for="meal in meals" :key="meal.id" class="border border-gray-100 rounded-2xl p-4 hover:border-primary-200 hover:bg-primary-50/30 transition-all">
+                    <div>
                         <h4 class="font-bold text-gray-900 mb-1">@{{ meal.food_name }}</h4>
                         <p v-if="meal.notes" class="text-xs text-gray-500 italic mb-2">"@{{ meal.notes }}"</p>
 
@@ -341,9 +282,6 @@ const MealTypeSection = {
                             <span class="text-gray-500 border border-gray-200 px-2 py-1 rounded-md">@{{ Math.round(meal.serving_size) }}g</span>
                         </div>
                     </div>
-                    <button @click="$emit('useMeal', meal)" class="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer whitespace-nowrap">
-                        + 기록에 추가
-                    </button>
                 </div>
             </div>
         </div>
@@ -359,15 +297,7 @@ Vue.createApp({
             selectedDay: 1,
             availableDays: [],
             loading: false,
-            error: null,
-            showUseMealModal: false,
-            selectedMeal: null,
-            applying: false,
-            useMealError: '',
-            useMealForm: {
-                date: new Date().toISOString().split('T')[0],
-                time: ''
-            }
+            error: null
         }
     },
     computed: {
@@ -430,41 +360,6 @@ Vue.createApp({
             if (!this.currentDayPlan || !this.currentDayPlan.meals) return [];
             const meals = this.currentDayPlan.meals[type] || [];
             return meals.map(meal => ({ ...meal, meal_type: type }));
-        },
-        useMeal(meal) {
-            this.selectedMeal = meal;
-            this.useMealForm.date = new Date().toISOString().split('T')[0];
-            this.useMealForm.time = '';
-            this.useMealError = '';
-            this.showUseMealModal = true;
-        },
-        async applyMeal() {
-            this.applying = true;
-            this.useMealError = '';
-            try {
-                const payload = {
-                    date: this.useMealForm.date,
-                    meal_type: this.selectedMeal.meal_type,
-                    food_id: this.selectedMeal.food_id || null,
-                    food_name: this.selectedMeal.food_name,
-                    serving_size: parseFloat(this.selectedMeal.serving_size),
-                    calories: parseFloat(this.selectedMeal.calories),
-                    protein_g: parseFloat(this.selectedMeal.protein_g),
-                    carbs_g: parseFloat(this.selectedMeal.carbs_g),
-                    fat_g: parseFloat(this.selectedMeal.fat_g),
-                    meal_time: this.useMealForm.time || null
-                };
-                const response = await axios.post('/api/daily-logs/meals', payload);
-                if (response.data.success) {
-                    if (window.showToast) window.showToast('식단이 적용되었습니다!', 'success');
-                    this.showUseMealModal = false;
-                    this.selectedMeal = null;
-                }
-            } catch (error) {
-                this.useMealError = error.response?.data?.message || '식단 적용에 실패했습니다.';
-            } finally {
-                this.applying = false;
-            }
         },
         formatDate(date) {
             return new Date(date).toLocaleDateString('ko-KR');
